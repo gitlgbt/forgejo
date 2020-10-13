@@ -678,6 +678,32 @@ var (
 		"gitea-actions",   // gitea builtin user (id: -2)
 		"forgejo-actions", // forgejo builtin user (id: -2)
 		"actor",           // user for activitypub / federation (id: -3)
+
+		// codeberg added, contains duplicates
+		"about", "home",
+		"abuse", "admin", "api", "app", "apt", "apps", "appserver", "archive", "archives", "assets", "attachments", "avatar", "avatars",
+		"bbs", "blog",
+		"cache", "cd", "cdn", "ci", "cloud", "cluster", "commits", "connect", "contact",
+		"dashboard", "debug", "deploy", "deployment", "dev", "dns", "dns0", "dns1", "dns2", "dns3", "dns4", "download",
+		"email", "error", "explore",
+		"font", "fonts", "forum", "ftp",
+		"ghost",
+		"help", "helpdesk", "host",
+		"i", "imap", "info", "install", "internal", "issues",
+		"less", "login",
+		"m", "mail", "mailserver", "manifest", "metrics", "milestones", "mx",
+		"new", "news", "notifications",
+		"official", "org", "ota", "owa",
+		"packages", "plugins", "poll", "polls", "pop", "pop3", "portal", "postmaster", "project", "projects", "pulls",
+		"raw", "remote", "repo", "robot", "robots",
+		"search", "secure", "server", "shop", "shopping", "smtp", "ssl", "stars", "store", "support",
+		"takeout", "template", "test", "testing",
+		"user",
+		"vote", "voting",
+		"web", "webmail", "webmaster", "webshop", "webstore", "www", "www0", "www1", "www2", "www3", "www4", "www5", "www6", "www7", "www8", "www9",
+		"ns", "ns0", "ns1", "ns2", "ns3", "ns4",
+		"vpn",
+		"openpgpkey",
 	}
 
 	// These names are reserved for user accounts: user's keys, user's rss feed, user's avatar, etc.
