@@ -52,6 +52,11 @@
 							</div>
 						</form>
 					{{end}}
+					{{if eq .LowerName "pages"}}
+						<a class="ui compact small basic button" href="https://{{.Owner.Name}}.codeberg.page" target="_blank" data-tooltip-content="View on Codeberg Pages">
+							{{svg "octicon-link-external" 16}} Visit Page
+						</a>
+					{{end}}
 					{{if $.EnableFeed}}
 					{{/* An extra div-element is not necessary here, as this button does not secretly contain two buttons. */}}
 					<a class="ui compact small basic button" href="{{$.RepoLink}}.rss" data-tooltip-content="{{ctx.Locale.Tr "rss_feed"}}">
