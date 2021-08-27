@@ -1,0 +1,45 @@
+<!-- Pages Warning that content is accessible even on private repos -->
+{{if and (eq .Repository.LowerName "pages") (.Repository.IsPrivate)}}
+	<div class="ui warning message">
+		If you expected this content to be served via <a href="https://docs.codeberg.org/codeberg-pages/">Codeberg Pages</a>, please note that we stopped serving private repositories in December 2021. Please switch the visibility to public if you want to publish this content again.
+	</div>
+{{end}}
+
+<!-- Warning if private repo exceeds a certain size (hardcoded to 100MB + 250MB different warning-->
+{{if and (.Repository.IsPrivate) (ge .Repository.Size 100000000)}}
+	<div class="ui error message">
+		Your private repo uses up a{{if ge .Repository.Size 250000000}}n incredibly{{end}} large amount of disk storage, while
+		all content should ideally be public and licensed under an
+		<a href="https://opensource.org/licenses/" rel="noopener noreferrer" target="_blank">OSI</a>- or
+		<a href="https://www.gnu.org/licenses/license-list.html" rel="noopener noreferrer" target="_blank">FSF</a>-approved Free Software licence.<br/>
+		<strong>Please refer to our ToS and the FAQ about
+		<a href="https://docs.codeberg.org/getting-started/faq/#is-it-allowed-to-host-non-free-software%3F">software licenses</a>
+		and <a href="https://docs.codeberg.org/getting-started/faq/#how-about-private-repositories%3F">private repositories</a></strong>.<br/>
+		Thank you for considering to release this repo to the public or reducing your required disk space for this repo.
+	</div>
+{{end}}
+
+<!-- go through the Codeberg-specific flags (repo topics) to display some targeted banners -->
+{{range .Topics}}
+
+	<!-- warning if repo is flagged as missing a license -->
+	{{if or (eq . "cbf-nolicense") (eq . "cbf-abuse-nolicense")}}
+		<div class="ui error message" style="text-align: left;">
+			<strong>Warning:</strong> Missing License<br/>
+			We looked everywhere, but we couldn't find an
+			<a href="https://opensource.org/licenses/" rel="noopener noreferrer" target="_blank">OSI</a>- or
+			<a href="https://www.gnu.org/licenses/license-list.html" rel="noopener noreferrer" target="_blank">FSF</a>-approved
+			Free Software or Content License, which is a requirement for hosting content on Codeberg.<br/>
+			Learn about why no license or custom ones are a bad idea and get started
+			<a href="https://docs.codeberg.org/getting-started/licensing/">on the docs</a>.<br/>
+			{{if $.Permission.IsAdmin}}
+				Please add a license to your code to make your work usable to others.
+				Expect some delay until this banner disappears.
+			{{else}}
+				Please consider carefully if you want to use (parts of) this project, as doing so might put you in legal trouble.
+			{{end}}
+		</div>
+	{{end}}
+
+{{end}}
+

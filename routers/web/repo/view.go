@@ -1006,10 +1006,13 @@ func renderRepoTopics(ctx *context.Context) {
 	}
 
 	topicNames := make([]string, 0, len(topics))
+	topicCbFlag := make([]bool, 0, len(topics))
 	for _, t := range topics {
 		topicNames = append(topicNames, t.Name)
+		topicCbFlag = append(topicCbFlag, strings.HasPrefix(t.Name, "cbf-"))
 	}
 	ctx.Data["Topics"] = topicNames
+	ctx.Data["TopicsIsCodebergFlag"] = topicCbFlag
 }
 
 func prepareOpenWithEditorApps(ctx *context.Context) {
