@@ -97,7 +97,7 @@ type Issue struct {
 	OriginalAuthor    string
 	OriginalAuthorID  int64                  `xorm:"index"`
 	Title             string                 `xorm:"name"`
-	Content           string                 `xorm:"LONGTEXT"`
+	Content           string                 `xorm:"TEXT"`
 	RenderedContent   template.HTML          `xorm:"-"`
 	ContentVersion    int                    `xorm:"NOT NULL DEFAULT 0"`
 	Labels            []*Label               `xorm:"-"`

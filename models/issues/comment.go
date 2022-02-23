@@ -286,13 +286,13 @@ type Comment struct {
 	Line            int64 // - previous line / + proposed line
 	ExtraLinesCount int64 `xorm:"NOT NULL DEFAULT 0"` // number of additional lines after Line (0 = single line)
 	TreePath        string
-	Content         string        `xorm:"LONGTEXT"`
+	Content         string        `xorm:"TEXT"`
 	ContentVersion  int           `xorm:"NOT NULL DEFAULT 0"`
 	RenderedContent template.HTML `xorm:"-"`
 
 	// Path represents the 4 lines of code cemented by this comment
 	Patch       string `xorm:"-"`
-	PatchQuoted string `xorm:"LONGTEXT patch"`
+	PatchQuoted string `xorm:"TEXT patch"`
 
 	CreatedUnix timeutil.TimeStamp `xorm:"INDEX created"`
 	UpdatedUnix timeutil.TimeStamp `xorm:"INDEX updated"`
