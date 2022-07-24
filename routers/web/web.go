@@ -638,6 +638,7 @@ func registerRoutes(m *web.Route) {
 
 	m.Get("/", Home)
 	m.Get("/sitemap.xml", sitemapEnabled, ignExploreSignIn, HomeSitemap)
+	m.Get("/about", About) // codeberg
 	m.Group("/.well-known", func() {
 		m.Get("/openid-configuration", auth.OIDCWellKnown)
 		m.Group("", func() {

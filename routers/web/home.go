@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 
+	activities_model "forgejo.org/models/activities"
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	repo_model "forgejo.org/models/repo"
@@ -80,11 +81,16 @@ func Home(ctx *context.Context) {
 		return
 	}
 
+	// codeberg: show about page
+	About(ctx)
+}
+
+// codeberg specific about page
+func About(ctx *context.Context) {
 	ctx.Data["PageIsHome"] = true
 	ctx.Data["IsRepoIndexerEnabled"] = setting.Indexer.RepoIndexerEnabled
-
 	ctx.Data["OpenGraphDescription"] = setting.UI.Meta.Description
-
+	ctx.Data["Stats"] = activities_model.GetStatsSimple(ctx)
 	ctx.HTML(http.StatusOK, tplHome)
 }
 

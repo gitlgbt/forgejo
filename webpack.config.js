@@ -103,6 +103,9 @@ export default {
       fileURLToPath(new URL('web_src/fomantic/build/semantic.css', import.meta.url)),
       fileURLToPath(new URL('web_src/css/index.css', import.meta.url)),
     ],
+    homepage: [
+      fileURLToPath(new URL('web_src/css/homepage.css', import.meta.url)),
+    ],
     webcomponents: [
       fileURLToPath(new URL('web_src/js/webcomponents/index.js', import.meta.url)),
     ],
