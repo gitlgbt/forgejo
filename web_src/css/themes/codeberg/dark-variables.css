@@ -67,7 +67,6 @@
     --color-text-light: var(--color-secondary-dark-9);
     --color-text-light-2: var(--color-secondary-dark-8);
     --color-text-light-3: var(--color-secondary-dark-3);
-    --color-footer: var(--color-secondary-light-4);
     --color-timeline: var(--color-secondary);
     --color-input-text: var(--color-text-dark);
     --color-input-background: var(--color-secondary);
@@ -88,6 +87,10 @@
     --color-expand-button: var(--color-secondary-dark-3);
     --color-placeholder-text: var(--color-text-light-2);
     --color-nav-hover-bg: var(--color-secondary-dark-3);
+
+    /* Codeberg footer */
+    --color-footer: var(--color-secondary-light-4);
+    --color-footer-text: #ffffff;
 }
 
 .ui.horizontal.segments > .segment {

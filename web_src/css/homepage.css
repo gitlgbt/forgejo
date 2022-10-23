@@ -462,8 +462,9 @@ main section#home-section-support h3 {
     text-align: center;
   }
 }
-main section#home-section-support h3 img {
+main section#home-section-support h3 svg {
   margin-left: 0.1em;
+  vertical-align: unset;
 }
 main section#home-section-support div {
   display: grid;

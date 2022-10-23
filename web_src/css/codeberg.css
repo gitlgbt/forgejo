@@ -10,11 +10,17 @@
 	scrollbar-color: initial;
 }
 
-html[data-theme^="forgejo-light"] #navbar-logo > img, html[data-theme^="gitea-light"] #navbar-logo > img, html[data-theme^="forgejo-light"] footer .branding img, html[data-theme^="gitea-light"] footer .branding img {
+html[data-theme^="forgejo-light"] #navbar-logo > img,
+html[data-theme^="gitea-light"] #navbar-logo > img,
+html[data-theme^="forgejo-light"] footer .branding img,
+html[data-theme^="gitea-light"] footer .branding img {
 	content: url('https://design.codeberg.org/logo-kit/icon.svg');
 }
 @media (prefers-color-scheme: light) {
-		html[data-theme^="forgejo-auto"] #navbar-logo > img, html[data-theme^="gitea-auto"] #navbar-logo > img, html[data-theme^="forgejo-auto"] footer .branding img, html[data-theme^="gitea-auto"] footer .branding img {
+	html[data-theme^="forgejo-auto"] #navbar-logo > img,
+  html[data-theme^="gitea-auto"] #navbar-logo > img,
+  html[data-theme^="forgejo-auto"] footer .branding img,
+  html[data-theme^="gitea-auto"] footer .branding img {
 		content: url('https://design.codeberg.org/logo-kit/icon.svg');
 	}
 }
