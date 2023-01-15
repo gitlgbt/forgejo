@@ -45,11 +45,13 @@
 			<a class="item{{if .PageIsExplore}} active{{end}}" {{if .PageIsExplore}}aria-current="page" {{end}}href="{{AppSubUrl}}/explore/repos">{{ctx.Locale.Tr "explore"}}</a>
 		{{end}}
 
-		{{template "custom/extra_links" .}}
-
 		{{if not .IsSigned}}
-			<a class="item" target="_blank" rel="noopener noreferrer" href="{{AppDocsURL "/"}}">{{ctx.Locale.Tr "help"}}</a>
+			<a class="item" target="_blank" href="https://docs.codeberg.org/getting-started/what-is-codeberg/#what-is-codeberg-e.v.%3F">About</a>
+			<a class="item" target="_blank" href="https://docs.codeberg.org/getting-started/faq/">FAQ</a>
+			<a class="item" target="_blank" rel="noopener noreferrer" href="https://docs.codeberg.org">{{ctx.Locale.Tr "help"}}</a>
 		{{end}}
+
+		{{template "custom/extra_links" .}}
 	</div>
 
 	<!-- the full dropdown menus -->
@@ -192,7 +194,7 @@
 							</a>
 						</li>
 						<li>
-							<a target="_blank" rel="noopener noreferrer" href="{{AppDocsURL "/"}}">
+							<a target="_blank" rel="noopener noreferrer" href="https://docs.codeberg.org">
 								{{svg "octicon-question"}}
 								{{ctx.Locale.Tr "help"}}
 							</a>
