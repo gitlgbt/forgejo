@@ -90,4 +90,8 @@
 @import "./issues.css";
 
 @import "./helpers.css";
+
+/* codeberg */
+@import "./codeberg.css";
+
 @tailwind utilities;

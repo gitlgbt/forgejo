@@ -1,0 +1,132 @@
+:root {
+    --gitea-color-scheme-1: #2185d0;
+    --gitea-text-color: #FFF;
+}
+
+#navbar .ui.red.label, #navbar .ui.red.labels .label { box-shadow: 0 0 1px 1px #c82121; }
+
+* {
+	scrollbar-width: initial;
+	scrollbar-color: initial;
+}
+
+html[data-theme^="forgejo-light"] #navbar-logo > img, html[data-theme^="gitea-light"] #navbar-logo > img, html[data-theme^="forgejo-light"] footer .branding img, html[data-theme^="gitea-light"] footer .branding img {
+	content: url('https://design.codeberg.org/logo-kit/icon.svg');
+}
+@media (prefers-color-scheme: light) {
+		html[data-theme^="forgejo-auto"] #navbar-logo > img, html[data-theme^="gitea-auto"] #navbar-logo > img, html[data-theme^="forgejo-auto"] footer .branding img, html[data-theme^="gitea-auto"] footer .branding img {
+		content: url('https://design.codeberg.org/logo-kit/icon.svg');
+	}
+}
+
+@property --donation-pretty-gradient-color-1 {
+  syntax: '<color>';
+  initial-value: #000;
+  inherits: false;
+}
+
+@property --donation-pretty-gradient-color-2 {
+  syntax: '<color>';
+  initial-value: #000;
+  inherits: false;
+}
+.donation-pretty {
+  --donation-pretty-gradient-color-1: var(--color-secondary-alpha-60);
+  --donation-pretty-gradient-color-2: var(--color-secondary-alpha-60);
+  background: linear-gradient(
+    to top right,
+    var(--donation-pretty-gradient-color-1), var(--donation-pretty-gradient-color-2)
+  ) !important;
+  transition: color 125ms, --donation-pretty-gradient-color-1 250ms, --donation-pretty-gradient-color-2 0ms !important;
+}
+.donation-pretty:hover {
+  --donation-pretty-gradient-color-1: var(--color-primary-light-2);
+  --donation-pretty-gradient-color-2: var(--color-primary-light-1);
+  color: #fff !important;
+}
+
+/* Custom Codeberg footer layout */
+footer {
+  background-color: var(--color-footer);
+  width: 100%;
+  color: var(--color-footer-text);
+  font-weight: 400;
+  padding: 1em;
+
+  container-type: inline-size;
+  container-name: footer;
+}
+footer .grid {
+  display: grid;
+  gap: 2em 1.5em;
+  padding-block: 2em 1em;
+}
+@container footer (width < 965px) {
+  footer .grid {
+    padding-inline: 2em;
+  }
+}
+@container footer (width >= 965px) {
+  footer .grid {
+    column-gap: 20px;
+    grid-template-columns: repeat(5, minmax(177px, 240px));
+    margin-inline: auto;
+    max-width: min(1280px, 100vw);
+  }
+}
+footer .grid a,
+footer .grid ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  margin-top: 1.25em;
+  line-height: 2em;
+}
+footer .branding img {
+  width: 100px;
+}
+footer .powered-by img {
+  width: 100px;
+  height: 37.5px;
+}
+footer .powered-by .title {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-size: 1em;
+}
+footer * a {
+  color: inherit;
+}
+footer * b {
+  font-size: 2em;
+}
+footer .ui.language .menu {
+  max-height: 500px;
+  overflow-y: auto;
+  margin-bottom: 7px;
+}
+footer .ui.language .svg,
+footer .ui.language .text {
+  margin-right: 0.15em;
+  vertical-align: middle;
+}
+.footer-bottom-grid {
+  display: grid;
+  grid-template-columns: 256px minmax(256px,1fr) 256px !important;
+}
+.footer-social {
+  grid-column: 2;
+  text-align: center;
+}
+.footer-language-switch {
+  align-self: end;
+  margin-left: auto;
+}
+@media (max-width: 767.98px) {
+  .footer-bottom-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+  }
+}
+
