@@ -1,0 +1,5 @@
+/* Basic styles for Codeberg */
+@import "theme-codeberg-light.css";
+
+@import "theme-codeberg-dark.css" (prefers-color-scheme: dark);
+

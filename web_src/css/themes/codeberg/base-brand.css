@@ -1,0 +1,27 @@
+:root {
+  --color-primary: #2185D0;
+  /* This variable will rerite in Forgejo v15 */
+  --color-nav-text: #ffffff;
+  --color-nav-hover-bg: #00000014;
+	--color-primary: #2185D0;
+	--color-footer: #144B49;
+	--color-footer-text: #fff;
+}
+
+.following.bar, #navbar {
+    /* Change navbar color scheme to match Codeberg's brand */
+    background-color: var(--color-primary);
+    border-bottom: none !important;
+}
+
+#navbar-expand-toggle {
+    /* Fix contrast for the mobile menu button */
+    --color-light-border: rgba(255,255,255,0.5);
+    --color-text-light: #fff;
+}
+* {
+    /* Revert changes to browser scrollbar */
+    scrollbar-width: initial;
+    scrollbar-color: initial;
+}
+
