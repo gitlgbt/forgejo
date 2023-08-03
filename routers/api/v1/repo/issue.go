@@ -24,6 +24,7 @@ import (
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/timeutil"
+	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/routers/api/v1/utils"
 	"forgejo.org/services/context"
@@ -753,7 +754,9 @@ func CreateIssue(ctx *context.APIContext) {
 	}
 
 	if err := issue_service.NewIssue(ctx, ctx.Repo().Repository, issue, form.Labels, nil, assigneeIDs); err != nil {
-		if errors.Is(err, user_model.ErrBlockedByUser) {
+		if errors.Is(err, util.ErrRateLimit) {
+			ctx.Error(http.StatusTooManyRequests, "Ratelimit", err)
+		} else if errors.Is(err, user_model.ErrBlockedByUser) {
 			ctx.Error(http.StatusForbidden, "BlockedByUser", err)
 			return
 		} else if repo_model.IsErrUserDoesNotHaveAccessToRepo(err) {

@@ -17,6 +17,7 @@ var (
 	ErrPermissionDenied = errors.New("permission denied")
 	ErrAlreadyExist     = errors.New("resource already exists")
 	ErrNotExist         = errors.New("resource does not exist")
+	ErrRateLimit        = errors.New("rate limited")
 )
 
 // SilentWrap provides a simple wrapper for a wrapped error where the wrapped error message plays no part in the error message

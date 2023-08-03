@@ -14,6 +14,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"forgejo.org/models/db"
@@ -1022,6 +1023,14 @@ func (c *Comment) LoadPushCommits(ctx context.Context) (err error) {
 	return err
 }
 
+func CodebergCommentThrottledContent(opts *CreateCommentOptions) bool {
+	if strings.Contains(opts.Content, "@") {
+		return true
+	}
+	refCnt := strings.Count(opts.Content, "http")
+	return refCnt > 0 && refCnt > strings.Count(opts.Content, "https://codeberg.org/")
+}
+
 // CreateComment creates comment with context
 func CreateComment(ctx context.Context, opts *CreateCommentOptions) (_ *Comment, err error) {
 	ctx, committer, err := db.TxContext(ctx)
@@ -1031,6 +1040,25 @@ func CreateComment(ctx context.Context, opts *CreateCommentOptions) (_ *Comment,
 	defer committer.Close()
 
 	e := db.GetEngine(ctx)
+	// codeberg-specific
+	if opts.Type == CommentTypeComment && !opts.Repo.HasFlag(ctx, "disable-ratelimit") {
+		var factor int64 = 3
+		if time.Since(opts.Doer.CreatedUnix.AsTime()) > time.Hour*24*180 {
+			factor += 3
+		}
+		if CodebergCommentThrottledContent(opts) {
+			factor -= 2
+		}
+		if count5m, _ := e.Table("comment").Where("poster_id = ?", opts.Doer.ID).And("created_unix>?", time.Now().Unix()-300).And("type=0").Count(&Comment{}); count5m > 5*factor {
+			return nil, fmt.Errorf("CreateComment: %q posted %d comments in 5 minutes: %w", opts.Doer.Name, count5m, util.ErrRateLimit)
+		}
+		if count10m, _ := e.Table("comment").Where("poster_id = ?", opts.Doer.ID).And("created_unix>?", time.Now().Unix()-600).And("type=0").Count(&Comment{}); count10m > 8*factor {
+			return nil, fmt.Errorf("CreateComment: %q posted %d comments in 10 minutes: %w", opts.Doer.Name, count10m, util.ErrRateLimit)
+		}
+		if count30m, _ := e.Table("comment").Where("poster_id = ?", opts.Doer.ID).And("created_unix>?", time.Now().Unix()-1800).And("type=0").Count(&Comment{}); count30m > 15*factor {
+			return nil, fmt.Errorf("CreateComment: %q posted %d comments in 30 minutes: %w", opts.Doer.Name, count30m, util.ErrRateLimit)
+		}
+	}
 	var LabelID int64
 	if opts.Label != nil {
 		LabelID = opts.Label.ID
