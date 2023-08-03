@@ -569,7 +569,10 @@ func CreatePullRequest(ctx *context.APIContext) {
 	}
 
 	if err := pull_service.NewPullRequest(ctx, repo, prIssue, labelIDs, []string{}, pr, assigneeIDs); err != nil {
-		if errors.Is(err, user_model.ErrBlockedByUser) {
+		if errors.Is(err, util.ErrRateLimit) {
+			ctx.Error(http.StatusTooManyRequests, "ratelimit", err)
+			return
+		} else if errors.Is(err, user_model.ErrBlockedByUser) {
 			ctx.Error(http.StatusForbidden, "BlockedByUser", err)
 			return
 		} else if repo_model.IsErrUserDoesNotHaveAccessToRepo(err) {

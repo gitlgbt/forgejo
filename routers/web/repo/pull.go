@@ -1708,6 +1708,8 @@ func CompareAndPullRequestPost(ctx *context.Context) {
 
 	if err := pull_service.NewPullRequest(ctx, repo, pullIssue, labelIDs, attachments, pullRequest, assigneeIDs); err != nil {
 		switch {
+		case errors.Is(err, util.ErrRateLimit):
+			ctx.JSONError("You've been rate limited")
 		case errors.Is(err, user_model.ErrBlockedByUser):
 			ctx.JSONError(ctx.Tr("repo.pulls.blocked_by_user"))
 		case repo_model.IsErrUserDoesNotHaveAccessToRepo(err):

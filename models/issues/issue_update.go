@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"forgejo.org/models/db"
 	"forgejo.org/models/organization"
@@ -21,6 +22,7 @@ import (
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/references"
+	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
@@ -314,9 +316,49 @@ type NewIssueOptions struct {
 	IsPull      bool
 }
 
+func CodebergIssueThrottledContent(opts NewIssueOptions) bool {
+	for _, keyword := range []string{"Critical", "Urgent", "Inconsistent"} {
+		if strings.Contains(opts.Issue.Title, keyword) {
+			return true
+		}
+	}
+	if strings.Contains(opts.Issue.Content, "@") {
+		return true
+	}
+	refCnt := strings.Count(opts.Issue.Content, "http")
+	return refCnt > 0 && refCnt > strings.Count(opts.Issue.Content, setting.AppURL)
+}
+
+func CodebergUserFirstIssueTime(ctx context.Context, doer *user_model.User) timeutil.TimeStamp {
+	firstIssue := &Issue{}
+	ok, _ := db.GetEngine(ctx).Table("issue").Where("poster_id = ?", doer.ID).OrderBy("created_unix ASC").Get(firstIssue)
+	if !ok {
+		return timeutil.TimeStamp(0)
+	}
+	return firstIssue.CreatedUnix
+}
+
 // NewIssueWithIndex creates issue with given index
 func NewIssueWithIndex(ctx context.Context, doer *user_model.User, opts NewIssueOptions) (err error) {
 	e := db.GetEngine(ctx)
+	// codeberg specific
+	var factor int64 = 3
+	if doer.CreatedUnix.AsTime().Unix() < time.Now().Unix()-86400*180 {
+		factor += 3
+	}
+	if CodebergIssueThrottledContent(opts) || CodebergUserFirstIssueTime(ctx, doer).AsTime().Unix() < time.Now().Unix()-3600 {
+		factor -= 2
+	}
+	if count5m, _ := e.Table("issue").Where("poster_id = ?", doer.ID).And("created_unix>?", time.Now().Unix()-300).Count(new(Issue)); count5m > 4*factor {
+		return fmt.Errorf("NewIssue: %q posted %d issues in under 5 minutes: %w", doer.Name, count5m, util.ErrRateLimit)
+	}
+	if count10m, _ := e.Table("issue").Where("poster_id = ?", doer.ID).And("created_unix>?", time.Now().Unix()-600).Count(new(Issue)); count10m > 6*factor {
+		return fmt.Errorf("NewIssue: %q posted %d issues in under 10 minutes: %w", doer.Name, count10m, util.ErrRateLimit)
+	}
+	if count30m, _ := e.Table("issue").Where("poster_id = ?", doer.ID).And("created_unix>?", time.Now().Unix()-1800).Count(new(Issue)); count30m > 10*factor {
+		return fmt.Errorf("NewIssue: %q posted %d issues in under 30 minutes: %w", doer.Name, count30m, util.ErrRateLimit)
+	}
+
 	opts.Issue.Title = strings.TrimSpace(opts.Issue.Title)
 
 	if opts.Issue.MilestoneID > 0 {
@@ -427,7 +469,7 @@ func NewIssue(ctx context.Context, repo *repo_model.Repository, issue *Issue, la
 		LabelIDs:    labelIDs,
 		Attachments: uuids,
 	}); err != nil {
-		if repo_model.IsErrUserDoesNotHaveAccessToRepo(err) {
+		if repo_model.IsErrUserDoesNotHaveAccessToRepo(err) || errors.Is(err, util.ErrRateLimit) {
 			return err
 		}
 		return fmt.Errorf("newIssue: %w", err)
@@ -490,6 +532,20 @@ func FindAndUpdateIssueMentions(ctx context.Context, issue *Issue, doer *user_mo
 	if err = UpdateIssueMentions(ctx, issue.ID, mentions); err != nil {
 		return nil, fmt.Errorf("UpdateIssueMentions [%d]: %w", issue.ID, err)
 	}
+
+	// codeberg-specific
+	maxMentions := 3
+	if time.Since(doer.CreatedUnix.AsTime()) > time.Hour*24*720 {
+		maxMentions = 20
+	} else if time.Since(doer.CreatedUnix.AsTime()) > time.Hour*24*360 {
+		maxMentions = 10
+	} else if time.Since(doer.CreatedUnix.AsTime()) > time.Hour*24*180 {
+		maxMentions = 5
+	}
+	if len(mentions) > maxMentions {
+		mentions = nil
+	}
+
 	return mentions, err
 }
 

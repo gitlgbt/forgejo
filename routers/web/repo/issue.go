@@ -1270,7 +1270,10 @@ func NewIssuePost(ctx *context.Context) {
 	}
 
 	if err := issue_service.NewIssue(ctx, repo, issue, labelIDs, attachments, assigneeIDs); err != nil {
-		if errors.Is(err, user_model.ErrBlockedByUser) {
+		if errors.Is(err, util.ErrRateLimit) {
+			ctx.JSONError("You've been rate limited")
+			return
+		} else if errors.Is(err, user_model.ErrBlockedByUser) {
 			if issue.IsPull {
 				ctx.JSONError(ctx.Tr("repo.pulls.blocked_by_user"))
 			} else {
@@ -3295,7 +3298,9 @@ func NewComment(ctx *context.Context) {
 
 	comment, err := issue_service.CreateIssueComment(ctx, ctx.Doer, ctx.Repo.Repository, issue, form.Content, attachments)
 	if err != nil {
-		if errors.Is(err, user_model.ErrBlockedByUser) {
+		if errors.Is(err, util.ErrRateLimit) {
+			ctx.JSONError("You've been rate limited")
+		} else if errors.Is(err, user_model.ErrBlockedByUser) {
 			ctx.JSONError(ctx.Tr("repo.comment.blocked_by_user"))
 		} else {
 			ctx.ServerError("CreateIssueComment", err)
