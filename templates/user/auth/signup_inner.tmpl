@@ -54,6 +54,12 @@
 						{{end}}
 					</button>
 				</div>
+				<div class="ui message" style="text-align: start;" tabindex=0 aria-labelledby="captcha-intro captcha-aid codeberg-service captcha-morehelp">
+					<!-- the IDs are explicit, because they are also referenced as the label of the captcha input -->
+					<p id="captcha-intro">This page currently has a captcha required to complete the registration.</p>
+					<p id="captcha-plan">We are <a href="https://codeberg.org/Codeberg/Community/issues/1797">planning to drop the captcha</a> by improving moderation and spam detection. (state: March 2025).</p>
+					<p id="captcha-morehelp">If you have difficulties solving the captcha, please contact us at <a href="mailto:contact@codeberg.org">contact@codeberg.org</a> in the meantime and let us know your prefered account name.</p>
+				</div>
 			{{end}}
 
 			{{template "user/auth/oauth_container" .}}
