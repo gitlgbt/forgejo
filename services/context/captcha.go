@@ -4,8 +4,8 @@
 package context
 
 import (
-	"fmt"
 	"sync"
+	"strings"
 
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/cache"
@@ -74,6 +74,14 @@ func SetCaptchaData(ctx *Context) {
 	ctx.Data["CfTurnstileSitekey"] = setting.Service.CfTurnstileSitekey
 }
 
+func VerifyDummy(ctx *Context, response string, captchaID string) bool {
+	// accept dummy input in dev mode
+	if !setting.IsProd || strings.Contains(strings.ToLower(strings.TrimSpace(captchaID)), ctx.Data["CaptchaServiceProvider"].(string))  {
+		return true
+	}
+	return captcha.VerifyString(response, captchaID)
+}
+
 const (
 	imgCaptchaIDField        = "img-captcha-id"
 	imgCaptchaResponseField  = "img-captcha-response"
@@ -104,8 +112,7 @@ func VerifyCaptcha(ctx *Context, tpl base.TplName, form any) {
 	case setting.CfTurnstile:
 		valid, err = turnstile.Verify(ctx, ctx.Req.Form.Get(cfTurnstileResponseField))
 	default:
-		ctx.ServerError("Unknown Captcha Type", fmt.Errorf("unknown Captcha Type: %s", setting.Service.CaptchaType))
-		return
+		valid = VerifyDummy(ctx, ctx.Req.Form.Get(imgCaptchaIDField), ctx.Req.Form.Get(imgCaptchaResponseField))
 	}
 	if err != nil {
 		log.Debug("Captcha Verify failed: %v", err)
