@@ -8,15 +8,20 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base32"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"sync"
 
 	"forgejo.org/models/db"
 	"forgejo.org/modules/keying"
+	"forgejo.org/modules/setting"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 
+	lru "github.com/hashicorp/golang-lru/v2"
 	"github.com/pquerna/otp/totp"
+	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -70,10 +75,59 @@ func (t *TwoFactor) GenerateScratchToken() string {
 	return token
 }
 
+// codeberg specific
+var (
+	// Stores an hashed key of the inputs to the hashed value of
+	// those inputs, which is expensive to compute.
+	hashTokenCache *lru.TwoQueueCache[string, string]
+
+	hashTokenCacheInit = sync.OnceFunc(func() {
+		if setting.TokenHashCacheSize > 0 {
+			var err error
+			hashTokenCache, err = lru.New2Q[string, string](setting.TokenHashCacheSize)
+			if err != nil {
+				panic(err)
+			}
+		}
+	})
+)
+
 // HashToken return the hashable salt
 func HashToken(token, salt string) string {
+	hashTokenCacheInit()
+	if hashTokenCache == nil {
+		tempHash := pbkdf2.Key([]byte(token), []byte(salt), 10000, 50, sha256.New)
+		return hex.EncodeToString(tempHash)
+	}
+
+	// codeberg specific
+	// Use blake2b for a fast hash of the inputs:
+	// H(len(token)||token||len(salt)||salt)
+	// Where len(x) is the length of x in little endian, always 8 bytes.
+	// Where || is the concatenation of two bitstrings.
+	h, _ := blake2b.New256(nil)
+
+	var buf [8]byte
+	binary.LittleEndian.PutUint64(buf[:], uint64(len(token)))
+	h.Write(buf[:])
+	h.Write([]byte(token))
+
+	binary.LittleEndian.PutUint64(buf[:], uint64(len(salt)))
+	h.Write(buf[:])
+	h.Write([]byte(salt))
+
+	// Safe to convert to string, underlying []byte will not be changed.
+	key := util.UnsafeBytesToString(h.Sum(nil))
+	// Lookup the key in the cache.
+	if hash, ok := hashTokenCache.Get(key); ok {
+		return hash
+	}
+
+	// Otherwise compute it.
 	tempHash := pbkdf2.Key([]byte(token), []byte(salt), 10000, 50, sha256.New)
-	return hex.EncodeToString(tempHash)
+	encodedHash := hex.EncodeToString(tempHash)
+	hashTokenCache.Add(key, encodedHash)
+	return encodedHash
 }
 
 // VerifyScratchToken verifies if the specified scratch token is valid.

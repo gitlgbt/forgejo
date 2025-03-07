@@ -42,6 +42,7 @@ var (
 	PasswordCheckPwn                   bool
 	SuccessfulTokensCacheSize          int
 	DisableQueryAuthToken              bool
+	TokenHashCacheSize                 int
 )
 
 /*
@@ -471,6 +472,7 @@ func loadSecurityFrom(rootCfg ConfigProvider) {
 
 	PasswordCheckPwn = sec.Key("PASSWORD_CHECK_PWN").MustBool(false)
 	SuccessfulTokensCacheSize = sec.Key("SUCCESSFUL_TOKENS_CACHE_SIZE").MustInt(20)
+	TokenHashCacheSize = sec.Key("TOKEN_HASH_CACHE_SIZE").MustInt()
 
 	InternalToken = loadSecret(sec, "INTERNAL_TOKEN_URI", "INTERNAL_TOKEN")
 	if InstallLock && InternalToken == "" {
