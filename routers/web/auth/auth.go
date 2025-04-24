@@ -547,6 +547,7 @@ func SignUpPost(ctx *context.Context) {
 		Email:  form.Email,
 		Passwd: form.Password,
 	}
+	log.Info("New user created: %s (%s)", u.Name, ctx.Req.Form.Get("img-captcha-response"))
 
 	if !createAndHandleCreatedUser(ctx, tplSignUp, form, u, nil, nil, false) {
 		// error already handled
