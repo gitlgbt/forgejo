@@ -51,10 +51,67 @@
   min-width: 0;
 }
 
+/* Commit table responsive improvements */
+/* Adjustments for mobile devices */
 @media (max-width: 767.98px) {
   .issue-content-left,
   .issue-content-right {
     width: 100%;
+  }
+
+  .commit-table th,
+  .commit-table td {
+    padding: 8px 4px;
+  }
+
+  .commit-table .author-wrapper {
+    display: inline-block !important;
+    text-align: left !important;
+    align-self: flex-start !important;
+    white-space: normal !important;
+    hyphens: auto !important;
+  }
+
+  .commit-table .commit-summary {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+    text-overflow: unset !important;
+    overflow: visible !important;
+  }
+
+  .commit-table {
+    table-layout: fixed;
+  }
+
+  .commit-table td:nth-child(1),
+  .commit-table th:nth-child(1) {
+    width: 15% !important;
+  }
+
+  .commit-table td:nth-child(3),
+  .commit-table th:nth-child(3) {
+    width: 60% !important;
+  }
+
+  .ui.table > thead > tr > th:last-of-type,
+  .ui.table > tbody > tr > td:last-of-type,
+  .ui.table > tr > td:last-of-type {
+    padding-right: 0px;
+  }
+
+  .ui.table > tr > td,
+  .ui.table > tbody > tr > td {
+    border-top: 1px solid var(--color-secondary-alpha-50);
+    padding: 6px 3px;
+    text-align: inherit;
+  }
+
+  .ui.table > thead > tr > th:first-of-type,
+  .ui.table > tbody > tr > td:first-of-type,
+  .ui.table > tr > td:first-of-type {
+    padding-left: 5px;
   }
 }
 
@@ -234,8 +291,11 @@ td .commit-summary {
 }
 
 /* this is what limits the commit table width to a value that works on all viewport sizes */
-.repo-files-table-latest-commit-left {
-  max-width: calc(calc(min(100vw, 1280px)) - 145px - calc(2 * var(--page-margin-x)));
+.repo-files-table-latest-commit-left,
+#repo-files-table th:first-of-type {
+  max-width: calc(
+    calc(min(100vw, 1280px)) - 145px - calc(2 * var(--page-margin-x))
+  );
 }
 
 .repo-files-table-latest-commit-cell {
@@ -1321,6 +1381,7 @@ citation-information .tab:not(.active) {
 }
 .repository #commits-table thead .sha {
   width: 200px;
+  min-width: 160px;
 }
 
 .repository #commits-table thead .shatd {
@@ -1329,6 +1390,13 @@ citation-information .tab:not(.active) {
 
 .repository #commits-table td.sha .sha.label {
   margin: 0;
+}
+
+.repository #commits-table th:last-child,
+.repository #commits-table td:last-child {
+  width: 1%;
+  white-space: nowrap;
+  min-width: fit-content;
 }
 
 .repository #commits-table.ui.basic.striped.table tbody tr:nth-child(2n) {
@@ -2241,7 +2309,7 @@ tbody.commit-list {
     width: 100%;
   }
   .author-wrapper {
-    max-width: 80px;
+    max-width: 100%;
   }
 }
 

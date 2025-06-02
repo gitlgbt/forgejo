@@ -45,6 +45,10 @@ func (du *DateUtils) TimeSince(time any) template.HTML {
 	return TimeSince(time)
 }
 
+func (du *DateUtils) TimeSinceAbbreviated(time any) template.HTML {
+	return TimeSinceAbbreviated(time)
+}
+
 // ParseLegacy parses the datetime in legacy format, eg: "2016-01-02" in server's timezone.
 // It shouldn't be used in new code. New code should use Time or TimeStamp as much as possible.
 func (du *DateUtils) ParseLegacy(datetime string) time.Time {
@@ -168,4 +172,54 @@ func TimeDuration(start any) template.HTML {
 	markup := fmt.Sprintf(`<relative-time datetime="%[1]s" format="duration" prefix="" data-tooltip-content data-tooltip-interactive="true">%[2]s</relative-time>`,
 		startTime.Format(time.RFC3339), timeutil.TimeStampNow().AsTime().Sub(startTime).Truncate(time.Second))
 	return template.HTML(markup)
+}
+
+// TimeSinceAbbreviated renders abbreviated relative time HTML given a time
+func TimeSinceAbbreviated(then any) template.HTML {
+	thenTime, isZero := anyToTime(then)
+	if isZero {
+		return "-"
+	}
+
+	now := time.Now()
+	duration := now.Sub(thenTime)
+
+	var text string
+	if duration < 0 {
+		// Future time
+		duration = -duration
+		if duration < time.Minute {
+			text = fmt.Sprintf("%ds", int(duration.Seconds()))
+		} else if duration < time.Hour {
+			text = fmt.Sprintf("%dm", int(duration.Minutes()))
+		} else if duration < 24*time.Hour {
+			text = fmt.Sprintf("%dh", int(duration.Hours()))
+		} else if duration < 30*24*time.Hour {
+			text = fmt.Sprintf("%dd", int(duration.Hours()/24))
+		} else if duration < 365*24*time.Hour {
+			text = fmt.Sprintf("%dmo", int(duration.Hours()/(24*30)))
+		} else {
+			text = fmt.Sprintf("%dy", int(duration.Hours()/(24*365)))
+		}
+		text = "in " + text
+	} else {
+		// Past time
+		if duration < time.Minute {
+			text = fmt.Sprintf("%ds ago", int(duration.Seconds()))
+		} else if duration < time.Hour {
+			text = fmt.Sprintf("%dm ago", int(duration.Minutes()))
+		} else if duration < 24*time.Hour {
+			text = fmt.Sprintf("%dh ago", int(duration.Hours()))
+		} else if duration < 30*24*time.Hour {
+			text = fmt.Sprintf("%dd ago", int(duration.Hours()/24))
+		} else if duration < 365*24*time.Hour {
+			text = fmt.Sprintf("%dmo ago", int(duration.Hours()/(24*30)))
+		} else {
+			text = fmt.Sprintf("%dy ago", int(duration.Hours()/(24*365)))
+		}
+	}
+	friendlyText := thenTime.Format("2006-01-02 15:04:05 -07:00")
+	htm := fmt.Sprintf(`<span data-tooltip-content="%s" data-tooltip-interactive="true">%s</span>`,
+		html.EscapeString(friendlyText), html.EscapeString(text))
+	return template.HTML(htm)
 }

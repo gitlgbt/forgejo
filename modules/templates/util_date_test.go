@@ -104,3 +104,51 @@ func TestTimeDuration(t *testing.T) {
 		assert.EqualValues(t, `<relative-time datetime="2024-05-19T06:39:24+01:00" format="duration" prefix="" data-tooltip-content data-tooltip-interactive="true">1m8s</relative-time>`, result)
 	})
 }
+
+func TestTimeSinceAbbreviated(t *testing.T) {
+	du := NewDateUtils()
+
+	// Test nil input
+	assert.EqualValues(t, "-", du.TimeSinceAbbreviated(nil))
+
+	now := time.Now()
+
+	// Test seconds ago
+	thirtySecondsAgo := now.Add(-30 * time.Second)
+	actual := du.TimeSinceAbbreviated(thirtySecondsAgo)
+	assert.Contains(t, string(actual), "s ago")
+
+	// Test minutes ago
+	tenMinutesAgo := now.Add(-10 * time.Minute)
+	actual = du.TimeSinceAbbreviated(tenMinutesAgo)
+	assert.Contains(t, string(actual), "m ago")
+
+	// Test hours ago
+	fiveHoursAgo := now.Add(-5 * time.Hour)
+	actual = du.TimeSinceAbbreviated(fiveHoursAgo)
+	assert.Contains(t, string(actual), "h ago")
+
+	// Test days ago
+	threeDaysAgo := now.Add(-72 * time.Hour)
+	actual = du.TimeSinceAbbreviated(threeDaysAgo)
+	assert.Contains(t, string(actual), "d ago")
+
+	// Test months ago
+	threeMonthsAgo := now.Add(-90 * 24 * time.Hour)
+	actual = du.TimeSinceAbbreviated(threeMonthsAgo)
+	assert.Contains(t, string(actual), "mo ago")
+
+	// Test years ago
+	twoYearsAgo := now.Add(-730 * 24 * time.Hour)
+	actual = du.TimeSinceAbbreviated(twoYearsAgo)
+	assert.Contains(t, string(actual), "y ago")
+
+	// Test future time
+	inTenMinutes := now.Add(10 * time.Minute)
+	actual = du.TimeSinceAbbreviated(inTenMinutes)
+	assert.Contains(t, string(actual), "in ")
+	assert.Contains(t, string(actual), "m")
+
+	// Verify tooltip content is included
+	assert.Contains(t, string(actual), "data-tooltip-content")
+}
