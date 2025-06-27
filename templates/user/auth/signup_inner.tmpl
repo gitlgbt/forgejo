@@ -45,6 +45,15 @@
 
 				{{template "user/auth/captcha" .}}
 
+				<div class="ui message" style="text-align: start;" tabindex=0 aria-labelledby="consent">
+					<p id="consent">By registering for a Codeberg account, you consent to our <a href="https://codeberg.org/codeberg/org/src/PrivacyPolicy.md">Privacy Policy</a> and agree to our <a href="https://codeberg.org/codeberg/org/src/TermsOfUse.md">Terms of Use</a>.</p>
+				</div>
+
+				<div class="ui message" style="text-align: start; color:var(--color-warning-text);" tabindex=0 aria-labelledby="warning">
+					<p id="warning">Using Codeberg to spread SEO spam, malware, links to IPTV services ("tvbox") or pirated content <b>will</b> result in an immediate ban with <b>no prior warning</b>.</p>
+				</div>
+
+
 				<div class="inline field">
 					<button class="ui primary button tw-w-full">
 						{{if .LinkAccountMode}}
