@@ -997,6 +997,19 @@ func (c *Comment) LoadPushCommits(ctx context.Context) (err error) {
 
 	var data PushActionContent
 
+	// Codeberg: We have a limit of 65535 bytes for the content field,
+	// this could mean the content was truncated and is no longer a valid JSON.
+	// We can easily detect this if the last byte is not '}', we then try a best
+	// effort to make it a valid JSON again.
+	if !strings.HasSuffix(c.Content, "}") {
+		// Find the last trailing comma of the last full commit ID.
+		lastComma := strings.LastIndexByte(c.Content, ',')
+		// Should always be true, but a error is better than a NPE.
+		if lastComma != -1 {
+			c.Content = c.Content[:lastComma] + "]}"
+		}
+	}
+
 	err = json.Unmarshal([]byte(c.Content), &data)
 	if err != nil {
 		return err
