@@ -88,4 +88,8 @@
 			{{ctx.Locale.Tr "template"}}{{if .TemplateName}} {{.TemplateName}}{{end}}: {{call .TemplateLoadTimes}}
 		{{end}}
 	</div>
+  {{$linkUpper := StringUtils.ToUpper .Link}}
+	{{if or (not .IsSigned) (eq .Link "") (eq .Link "/about") (StringUtils.HasPrefix .Link "/user") (StringUtils.HasPrefix .Link "/explore") (StringUtils.HasPrefix $linkUpper "/CODEBERG") (StringUtils.HasPrefix $linkUpper "/CODEBERG-E.V.") (StringUtils.HasPrefix $linkUpper "/CODEBERG-INFRASTRUCTURE") (StringUtils.HasPrefix $linkUpper "/CODEBERG-CI")}}
+		<div class="symbol-of-tolerance" role="img"></div>
+	{{end}}
 </footer>

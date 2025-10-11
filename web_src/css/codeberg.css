@@ -136,3 +136,8 @@ footer .ui.language .text {
   }
 }
 
+.symbol-of-tolerance {
+  margin-top: 1em;
+  height: 0.25em;
+  background: linear-gradient(90deg, #ea392f 0%, #ea392f 9.091%, #f28917 9.091%, #f28917 18.182%, #eecb12 18.182%, #eecb12 27.273%, #78b82a 27.273%, #78b82a 36.364%, #4375ca 36.364%, #4375ca 45.455%, #c346e3 45.455%, #c346e3 54.545%, #7bcce5 54.545%, #7bcce5 63.636%, #eaeaea 63.636%, #eaeaea 72.727%, #f4aec8 72.727%, #f4aec8 81.818%, #000000 81.818%, #000000 90.909%, #945516 90.909%, #945516 100%);
+}
