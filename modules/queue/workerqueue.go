@@ -162,11 +162,8 @@ func (q *WorkerPoolQueue[T]) isBaseQueueDummy() bool {
 // Push adds an item to the queue, it may block for a while and then returns an error if the queue is full
 func (q *WorkerPoolQueue[T]) Push(data T) error {
 	if q.isBaseQueueDummy() && q.safeHandler != nil {
-		// FIXME: the "immediate" queue is only for testing, but it really causes problems because its behavior is different from a real queue.
-		// Even if tests pass, it doesn't mean that there is no bug in code.
-		if data, ok := q.unmarshal(q.marshal(data)); ok {
-			q.safeHandler(data)
-		}
+		log.Error("queue: received item for %s", q.GetName())
+		return nil
 	}
 	return q.baseQueue.PushItem(q.ctxRun, q.marshal(data))
 }
