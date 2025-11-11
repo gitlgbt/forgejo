@@ -12,6 +12,7 @@ import (
 
 	"forgejo.org/models"
 	git_model "forgejo.org/models/git"
+	"forgejo.org/models/moderation"
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/models/unit"
 	user_model "forgejo.org/models/user"
@@ -323,6 +324,24 @@ func editFilePost(ctx *context.Context, form forms.EditRepoFileForm, isNewFile b
 	gitIdentity := getGitIdentity(ctx, form.CommitMailID, tplEditFile, form)
 	if ctx.Written() {
 		return
+	}
+
+	pattern := setting.ContentPatterns()
+	if pattern != nil && !ctx.Repo.Repository.IsPrivate {
+		w := &setting.RememberSecondWriteWriter{}
+		_, _ = pattern.WriteString(w, form.Content)
+		if w.Writecount == 2 {
+			report := moderation.AbuseReport{
+				ReporterID:  25240,
+				ContentType: moderation.ReportedContentTypeRepository,
+				ContentID:   ctx.Repo.Repository.ID,
+				Category:    moderation.AbuseCategoryTypeIllegalContent,
+				Remarks:     "Automated abuse report, pattern found in file operation via web UI: " + form.Content[w.Idx:w.End],
+			}
+			if err := moderation.ReportAbuse(ctx, &report); err != nil {
+				log.Error("Cannot report abuse %-v: %v", report, err)
+			}
+		}
 	}
 
 	if _, err := files_service.ChangeRepoFiles(ctx, ctx.Repo.Repository, ctx.Doer, &files_service.ChangeRepoFilesOptions{
@@ -880,7 +899,7 @@ func UploadFileToServer(ctx *context.Context) {
 		return
 	}
 
-	upload, err := repo_model.NewUpload(ctx, name, buf, file)
+	upload, err := repo_model.NewUpload(ctx, name, buf, file, ctx.Repo.Repository)
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, fmt.Sprintf("NewUpload: %v", err))
 		return
