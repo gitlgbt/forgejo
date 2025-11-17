@@ -9,13 +9,13 @@ import (
 
 	"forgejo.org/modules/setting"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/VictoriaMetrics/metrics"
 )
 
 // Metrics validate auth token and render prometheus metrics
 func Metrics(resp http.ResponseWriter, req *http.Request) {
 	if setting.Metrics.Token == "" {
-		promhttp.Handler().ServeHTTP(resp, req)
+		metrics.WritePrometheus(resp, true)
 		return
 	}
 	header := req.Header.Get("Authorization")
@@ -29,5 +29,5 @@ func Metrics(resp http.ResponseWriter, req *http.Request) {
 		http.Error(resp, "", http.StatusUnauthorized)
 		return
 	}
-	promhttp.Handler().ServeHTTP(resp, req)
+	metrics.WritePrometheus(resp, true)
 }

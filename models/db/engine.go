@@ -21,6 +21,7 @@ import (
 
 	"code.forgejo.org/xorm/xorm"
 	"code.forgejo.org/xorm/xorm/contexts"
+	"code.forgejo.org/xorm/xorm/core"
 	"code.forgejo.org/xorm/xorm/names"
 	"code.forgejo.org/xorm/xorm/schemas"
 
@@ -37,6 +38,7 @@ var (
 type Engine interface {
 	Table(tableNameOrBean any) *xorm.Session
 	Count(...any) (int64, error)
+	DB() *core.DB
 	Decr(column string, arg ...any) *xorm.Session
 	Delete(...any) (int64, error)
 	Truncate(...any) (int64, error)
@@ -99,6 +101,7 @@ type xormEngineInterface interface {
 	xorm.EngineInterface
 	SetDefaultContext(context.Context)
 	SetConnMaxIdleTime(time.Duration)
+	DB() *core.DB
 }
 
 // newXORMEngineGroup creates an xorm.EngineGroup (with one master and one or more slaves).

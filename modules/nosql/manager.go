@@ -65,6 +65,7 @@ type RedisClient interface {
 
 	// redis.UniversalClient
 	Close() error
+	PoolStats() *redis.PoolStats
 }
 
 type redisClientHolder struct {

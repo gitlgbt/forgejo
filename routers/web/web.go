@@ -63,7 +63,6 @@ import (
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/klauspost/compress/gzhttp"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 var GzipMinSize = gzhttp.DefaultMinSize
@@ -385,7 +384,7 @@ func Routes() *web.Route {
 	}
 
 	if setting.Metrics.Enabled {
-		prometheus.MustRegister(metrics.NewCollector())
+		metrics.Register()
 		routes.Get("/metrics", gzipMid, Metrics)
 	}
 
