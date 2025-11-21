@@ -70,8 +70,8 @@ type ActionRunner struct {
 }
 
 const (
-	RunnerOfflineTime = time.Minute
-	RunnerIdleTime    = 10 * time.Second
+	RunnerOfflineTime = 2 * time.Minute
+	RunnerIdleTime    = time.Minute
 )
 
 // BelongsToOwnerName before calling, should guarantee that all attributes are loaded

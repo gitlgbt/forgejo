@@ -124,9 +124,14 @@ func (t *AccessToken) DisplayPublicOnly() bool {
 
 // UpdateLastUsed updates the time this token was last used to now.
 func (t *AccessToken) UpdateLastUsed(ctx context.Context) error {
-	t.UpdatedUnix = timeutil.TimeStampNow()
-	_, err := db.GetEngine(ctx).ID(t.ID).Cols("updated_unix").NoAutoTime().Update(t)
-	return err
+	now := timeutil.TimeStampNow()
+	if !t.UpdatedUnix.AsLocalTime().Truncate(time.Minute).Equal(now.AsLocalTime().Truncate(time.Minute)) {
+		t.UpdatedUnix = now
+		_, err := db.GetEngine(ctx).ID(t.ID).Cols("updated_unix").NoAutoTime().Update(t)
+		return err
+	}
+
+	return nil
 }
 
 func getAccessTokenIDFromCache(token string) int64 {
