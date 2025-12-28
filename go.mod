@@ -114,6 +114,7 @@ require (
 	gopkg.in/ini.v1 v1.67.3
 	mvdan.cc/xurls/v2 v2.6.0
 	pault.ag/go/debian v0.21.4
+	shirakumo.org/markless v1.0.5
 	xorm.io/builder v0.3.13
 )
 

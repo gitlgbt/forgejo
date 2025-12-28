@@ -56,6 +56,11 @@ var UI = struct {
 		MaxRows     int
 	} `ini:"ui.csv"`
 
+	Markless struct {
+		MaxFileSize int64
+		SafeMode    bool
+	} `init:"ui.markless"`
+
 	Admin struct {
 		UserPagingNum           int
 		RepoPagingNum           int
@@ -118,6 +123,13 @@ var UI = struct {
 	}{
 		MaxFileSize: 524288,
 		MaxRows:     2500,
+	},
+	Markless: struct {
+		MaxFileSize int64
+		SafeMode    bool
+	}{
+		MaxFileSize: 524288,
+		SafeMode:    true,
 	},
 	Admin: struct {
 		UserPagingNum           int

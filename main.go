@@ -19,6 +19,7 @@ import (
 	_ "forgejo.org/modules/markup/console"
 	_ "forgejo.org/modules/markup/csv"
 	_ "forgejo.org/modules/markup/markdown"
+	_ "forgejo.org/modules/markup/markless"
 	_ "forgejo.org/modules/markup/orgmode"
 
 	"github.com/urfave/cli/v3"

@@ -1,0 +1,21 @@
+.markless blockquote.inline{
+    display: flex;
+    align-items: start;
+    flex-direction: row-reverse;
+}
+.markless blockquote.inline>cite{
+    text-align: left;
+    width: 7em;
+}
+.markless blockquote.inline>p{
+    flex-grow: 1;
+    margin: 0;
+}
+.markless blockquote{
+    border-left: 0.2em solid #CCC;
+    padding-left: 1em;
+}
+.markless blockquote>cite{
+    display: block;
+    text-align: right;
+}
