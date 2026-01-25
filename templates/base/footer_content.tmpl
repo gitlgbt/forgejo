@@ -2,16 +2,17 @@
 	<div class="grid" aria-label="{{ctx.Locale.Tr "aria.footer.links"}}">
 		<div class="not-mobile">
 			<div class="branding" aria-hidden="true">
-				<img src="https://design.codeberg.org/logo-kit/icon_inverted.svg" alt="{{ctx.Locale.Tr "logo"}}">
+				<img class="light-logo" loading="lazy" src="https://design.codeberg.org/logo-kit/icon.svg" alt="{{ctx.Locale.Tr "logo"}}">
+				<img class="dark-logo" loading="lazy" src="https://design.codeberg.org/logo-kit/icon_inverted.svg" alt="{{ctx.Locale.Tr "logo"}}">
 			</div>
 			<div class="powered-by">
 				<div class="title">Powered by</div>
-				<p class="tw-mb-0">
-					<a target="_blank" rel="noopener noreferrer" href="https://forgejo.org" aria-label="Forgejo">
+				<a target="_blank" rel="noopener noreferrer" href="https://forgejo.org" aria-label="Forgejo">
+					<div class="branding" aria-hidden="true">
 						<img class="light-logo" loading="lazy" src="/assets/img/svg/forgejo-wordmark.svg" alt="Forgejo logo">
 						<img class="dark-logo" loading="lazy" src="/assets/img/svg/forgejo-wordmark-mono.svg" alt="Forgejo logo">
-					</a>
-				</p>
+					</div>
+				</a>
 				with <a class="tw-mt-0" href="/Codeberg-Infrastructure/forgejo" target="_blank">modifications</a>
 			</div>
 		</div>

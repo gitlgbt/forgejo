@@ -10,21 +10,42 @@
 	scrollbar-color: initial;
 }
 
-html[data-theme^="forgejo-light"] #navbar-logo > img,
-html[data-theme^="gitea-light"] #navbar-logo > img,
-html[data-theme^="forgejo-light"] footer .branding img,
-html[data-theme^="gitea-light"] footer .branding img {
-	content: url('https://design.codeberg.org/logo-kit/icon.svg');
+/* Codeberg and Forgejo logos with dynamic theme change */
+.branding > img.light-logo {
+  display: none;
+}
+html[data-theme^="forgejo-light"],
+html[data-theme^="gitea-light"] {
+  .branding > img.light-logo {
+    display: inline;
+  }
+}
+html[data-theme^="forgejo-light"],
+html[data-theme^="gitea-light"] {
+  .branding > img.dark-logo {
+	  display: none;
+  }
 }
 @media (prefers-color-scheme: light) {
-	html[data-theme^="forgejo-auto"] #navbar-logo > img,
-  html[data-theme^="gitea-auto"] #navbar-logo > img,
-  html[data-theme^="forgejo-auto"] footer .branding img,
-  html[data-theme^="gitea-auto"] footer .branding img {
-		content: url('https://design.codeberg.org/logo-kit/icon.svg');
+  html[data-theme^="forgejo-auto"],
+  html[data-theme^="gitea-auto"] {
+    .branding > img.light-logo {
+		  display: inline;
+    }
 	}
+  html[data-theme^="forgejo-auto"],
+  html[data-theme^="gitea-auto"] {
+    .branding > img.dark-logo {
+      display: none;
+    }
+  }
+}
+#navbar .branding,
+.powered-by .branding {
+  display: flex;
 }
 
+/* Donate button with animated gradient */
 @property --donation-pretty-gradient-color-1 {
   syntax: '<color>';
   initial-value: #000;

@@ -7,7 +7,10 @@
 	<div class="navbar-left ui secondary menu">
 		<!-- the logo -->
 		<a class="item" id="navbar-logo" href="{{AppSubUrl}}/" aria-label="{{if .IsSigned}}{{ctx.Locale.Tr "dashboard"}}{{else}}{{ctx.Locale.Tr "home"}}{{end}}">
-			<img width="30" height="30" src="https://design.codeberg.org/logo-kit/icon_inverted.svg" aria-hidden="true">
+			<div class="branding" aria-hidden="true">
+				<img width="30" height="30" loading="lazy" class="light-logo" src="https://design.codeberg.org/logo-kit/icon.svg" alt="{{ctx.Locale.Tr "logo"}}">
+				<img width="30" height="30" loading="lazy" class="dark-logo" src="https://design.codeberg.org/logo-kit/icon_inverted.svg" alt="{{ctx.Locale.Tr "logo"}}">
+			</div>
 		</a>
 
 		<!-- mobile right menu, it must be here because in mobile view, each item is a flex column, the first item is a full row column -->

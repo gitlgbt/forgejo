@@ -19,7 +19,10 @@
 		<nav id="navbar" aria-label="{{ctx.Locale.Tr "aria.navbar"}}">
 			<div class="navbar-left ui secondary menu">
 				<a class="item" id="navbar-logo" href="{{AppSubUrl}}/" aria-label="{{ctx.Locale.Tr "home"}}">
-					<img width="30" height="30" src="https://design.codeberg.org/logo-kit/icon_inverted.svg" alt="{{ctx.Locale.Tr "logo"}}" aria-hidden="true">
+					<div class="branding" aria-hidden="true">
+						<img width="30" height="30" class="light-logo" loading="lazy" src="https://design.codeberg.org/logo-kit/icon.svg" alt="{{ctx.Locale.Tr "logo"}}">
+						<img width="30" height="30" class="dark-logo" loading="lazy" src="https://design.codeberg.org/logo-kit/icon_inverted.svg" alt="{{ctx.Locale.Tr "logo"}}">
+					</div>
 				</a>
 			</div>
 		</nav>
