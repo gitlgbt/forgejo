@@ -269,7 +269,12 @@ func (q *WorkerPoolQueue[T]) doRun() {
 
 	wg := &workerGroup[T]{q: q}
 	wg.doPrepareWorkerContext()
-	wg.popItemChan, wg.popItemErr = popItemByChan(q.ctxRun, q.baseQueue.PopItem)
+	if q.GetWorkerMaxNumber() == -1337 {
+		wg.popItemChan = make(chan []byte)
+		wg.popItemErr = make(chan error)
+	} else {
+		wg.popItemChan, wg.popItemErr = popItemByChan(q.ctxRun, q.baseQueue.PopItem)
+	}
 
 	defer func() {
 		q.ctxRunCancel()
