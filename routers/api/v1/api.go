@@ -537,6 +537,7 @@ func Routes() *web.Route {
 
 	m.Use(shared.Middlewares()...)
 
+	// m.Get("/fosdem", FosdemStats)
 	addActionsRoutes := func(
 		m *web.Route,
 		reqChecker func(ctx *context.APIContext),
