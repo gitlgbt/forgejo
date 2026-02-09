@@ -24,6 +24,7 @@ import (
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 
+	"code.forgejo.org/xorm/xorm"
 	"xorm.io/builder"
 )
 
@@ -943,18 +944,19 @@ func IsNewPinAllowed(ctx context.Context, repoID int64, isPull bool) (bool, erro
 
 // InsertIssues insert issues to database
 func InsertIssues(ctx context.Context, issues ...*Issue) error {
-	ctx, committer, err := db.TxContext(ctx)
-	if err != nil {
-		return err
-	}
-	defer committer.Close()
-
-	for _, issue := range issues {
-		if err := insertIssue(ctx, issue); err != nil {
-			return err
+	return db.RetryTx(ctx, db.RetryConfig{
+		// Has been observed to deadlock with stats module when it's recalculating issue labels count.
+		// 2 attemps should be sufficient, 3 sounds nicer :)
+		AttemptCount: 3,
+		ErrorIs:      []error{xorm.ErrDeadlock},
+	}, func(ctx context.Context) error {
+		for _, issue := range issues {
+			if err := insertIssue(ctx, issue); err != nil {
+				return err
+			}
 		}
-	}
-	return committer.Commit()
+		return nil
+	})
 }
 
 func insertIssue(ctx context.Context, issue *Issue) error {

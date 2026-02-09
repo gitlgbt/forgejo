@@ -27,6 +27,7 @@ import (
 	"forgejo.org/modules/util"
 	"forgejo.org/services/stats"
 
+	"code.forgejo.org/xorm/xorm"
 	"github.com/mattn/go-jsd"
 	"xorm.io/builder"
 )
@@ -470,37 +471,34 @@ func NewIssueWithIndex(ctx context.Context, doer *user_model.User, opts NewIssue
 // NewIssue creates new issue with labels for repository.
 // The title will be cut off at 255 characters if it's longer than 255 characters.
 func NewIssue(ctx context.Context, repo *repo_model.Repository, issue *Issue, labelIDs []int64, uuids []string) (err error) {
-	ctx, committer, err := db.TxContext(ctx)
-	if err != nil {
-		return err
-	}
-	defer committer.Close()
-
-	idx, err := db.GetNextResourceIndex(ctx, "issue_index", repo.ID)
-	if err != nil {
-		return fmt.Errorf("generate issue index failed: %w", err)
-	}
-
-	issue.Index = idx
-	issue.Title, _ = util.SplitStringAtByteN(issue.Title, 255)
-
-	if err = NewIssueWithIndex(ctx, issue.Poster, NewIssueOptions{
-		Repo:        repo,
-		Issue:       issue,
-		LabelIDs:    labelIDs,
-		Attachments: uuids,
-	}); err != nil {
-		if repo_model.IsErrUserDoesNotHaveAccessToRepo(err) || errors.Is(err, util.ErrRateLimit) {
-			return err
+	return db.RetryTx(ctx, db.RetryConfig{
+		AttemptCount: 3,
+		ErrorIs:      []error{xorm.ErrDeadlock},
+	}, func(ctx context.Context) error {
+		idx, err := db.GetNextResourceIndex(ctx, "issue_index", repo.ID)
+		if err != nil {
+			return fmt.Errorf("generate issue index failed: %w", err)
 		}
-		return fmt.Errorf("newIssue: %w", err)
-	}
 
-	if err = committer.Commit(); err != nil {
-		return fmt.Errorf("Commit: %w", err)
-	}
+		issue.Index = idx
+		issue.Title, _ = util.SplitStringAtByteN(issue.Title, 255)
 
-	return nil
+		if err = NewIssueWithIndex(ctx, issue.Poster, NewIssueOptions{
+			Repo:        repo,
+			Issue:       issue,
+			LabelIDs:    labelIDs,
+			Attachments: uuids,
+		}); err != nil {
+			if repo_model.IsErrUserDoesNotHaveAccessToRepo(err) || errors.Is(err, util.ErrRateLimit) {
+				return err
+			}
+			if err.Error() == "Error 1205 (HY000): Lock wait timeout exceeded; try restarting transaction" {
+				return xorm.ErrDeadlock
+			}
+			return fmt.Errorf("newIssue: %w", err)
+		}
+		return nil
+	})
 }
 
 // UpdateIssueMentions updates issue-user relations for mentioned users.

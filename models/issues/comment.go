@@ -1471,17 +1471,28 @@ func DeleteComment(ctx context.Context, comment *Comment) error {
 
 // UpdateCommentsMigrationsByType updates comments' migrations information via given git service type and original id and poster id
 func UpdateCommentsMigrationsByType(ctx context.Context, tp structs.GitServiceType, originalAuthorID string, posterID int64) error {
-	_, err := db.GetEngine(ctx).Table("comment").
+	// Codeberg: Update query takes some time, make sure there's something that should be updated.
+	ids := make([]int64, 0, 8)
+	err := db.GetEngine(ctx).Table("comment").Select("comment.id").
 		Join("INNER", "issue", "issue.id = comment.issue_id").
 		Join("INNER", "repository", "issue.repo_id = repository.id").
 		Where("repository.original_service_type = ?", tp).
-		And("comment.original_author_id = ?", originalAuthorID).
-		Update(map[string]any{
-			"poster_id":          posterID,
-			"original_author":    "",
-			"original_author_id": 0,
-		})
-	return err
+		And("comment.original_author_id = ?", originalAuthorID).Find(&ids)
+	if err != nil {
+		return err
+	}
+
+	if len(ids) != 0 {
+		_, err := db.GetEngine(ctx).Table("comment").
+			In("comment.id", ids).
+			Update(map[string]any{
+				"poster_id":          posterID,
+				"original_author":    "",
+				"original_author_id": 0,
+			})
+		return err
+	}
+	return nil
 }
 
 // CreateAutoMergeComment is a internal function, only use it for CommentTypePRScheduledToAutoMerge and CommentTypePRUnScheduledToAutoMerge CommentTypes
