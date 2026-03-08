@@ -609,6 +609,7 @@ func RepoAssignment(ctx *Context) context.CancelFunc {
 	ctx.Data["CanWritePulls"] = ctx.Repo.CanWrite(unit_model.TypePullRequests)
 	ctx.Data["CanWriteActions"] = ctx.Repo.CanWrite(unit_model.TypeActions)
 	ctx.Data["IsModerationEnabled"] = setting.Moderation.Enabled
+	ctx.Data["DiscouragesForking"] = repo.HasFlag(ctx, "discourages-forking")
 
 	canSignedUserFork, err := repo_module.CanUserForkRepo(ctx, ctx.Doer, ctx.Repo.Repository)
 	if err != nil {

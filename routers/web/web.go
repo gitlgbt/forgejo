@@ -1394,7 +1394,11 @@ func registerRoutes(m *web.Route) {
 	// Grouping for those endpoints that do require authentication
 	m.Group("/{username}/{reponame}", func() {
 		if !setting.Repository.DisableForks {
-			m.Combo("/fork", reqRepoCodeReader).Get(repo.Fork).
+			m.Combo("/fork", reqRepoCodeReader, func(ctx *context.Context) {
+				if ctx.Data["DiscouragesForking"].(bool) {
+					ctx.Redirect("https://forgejo.org/docs/latest/user/agit-support/")
+				}
+			}).Get(repo.Fork).
 				Post(web.Bind(forms.CreateRepoForm{}), repo.ForkPost)
 		}
 		m.Group("/issues", func() {
