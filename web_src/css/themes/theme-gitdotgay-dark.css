@@ -416,3 +416,27 @@ svg.attention-caution {
   background-color: var(--color-green-badge-bg);
   color: var(--color-green-badge);
 }
+
+/* friendlycaptcha */
+.frc-captcha,
+.frc-captcha.dark {
+  border-color: var(--color-input-border) !important;
+  background-color: var(--color-input-background) !important;
+  border-radius: .28571429rem !important;
+  color: inherit !important;
+}
+.frc-captcha *,
+.frc-captcha.dark * {
+  color: inherit !important;
+}
+.frc-captcha.dark .frc-button,
+.frc-button {
+  border-color: var(--color-input-border) !important;
+  background: none !important;
+  border-radius: 2px !important;
+  transition: background .1s ease !important;
+}
+.frc-captcha.dark .frc-button:hover,
+.frc-button:hover {
+  background: var(--color-hover) !important;	
+}
