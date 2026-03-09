@@ -4,9 +4,14 @@
 package setting
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"forgejo.org/modules/container"
+	"forgejo.org/modules/log"
+	"forgejo.org/modules/util"
 )
 
 // UI settings
@@ -165,6 +170,39 @@ func loadUIFrom(rootCfg ConfigProvider) {
 	for _, reaction := range UI.Reactions {
 		UI.ReactionsLookup.Add(reaction)
 	}
+	loadEmojis()
 	UI.CustomEmojisLookup = make(container.Set[string])
 	UI.CustomEmojisLookup.AddMultiple(UI.CustomEmojis...)
+}
+
+var imageExtensions = map[string]bool{
+	".jpeg": true,
+	".jpg":  true,
+	".png":  true,
+	".apng": true,
+	".gif":  true,
+	".avif": true,
+	".webp": true,
+	".svg":  true,
+	".jxl":  true,
+}
+
+func loadEmojis() {
+	customEmojiDir := util.FilePathJoinAbs(CustomPath, "public/assets/img/emoji")
+	if emojis, err := os.ReadDir(customEmojiDir); err == nil {
+		for _, emoji := range emojis {
+			if emoji.IsDir() {
+				continue
+			}
+			emojiFileName := emoji.Name()
+			emojiExtension := filepath.Ext(emojiFileName)
+			if _, ok := imageExtensions[emojiExtension]; !ok {
+				continue
+			}
+			emojiName := strings.TrimSuffix(emojiFileName, emojiExtension)
+			UI.CustomEmojis = append(UI.CustomEmojis, emojiName)
+		}
+	} else {
+		log.Error("Failed to read custom emojis: %v", err)
+	}
 }
