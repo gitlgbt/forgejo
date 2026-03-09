@@ -1,3 +1,10 @@
+# gitgay/forgejo
+
+This is git.gay's fork of Forgejo, used for small UI tweaks and such.
+Use by others than git.gay itself is not supported, use at your own risk!
+
+---
+
 <div align="center">
     <img src="./assets/logo.svg" alt="" width="192" align="center" />
     <h1 align="center">Welcome to Forgejo</h1>
