@@ -459,6 +459,7 @@
 
 .markup kbd {
   padding: 0 0.35em;
+  display: inline-block;
 }
 
 .markup .ui.list .list,
