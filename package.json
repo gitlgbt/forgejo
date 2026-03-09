@@ -50,6 +50,7 @@
     "esbuild-loader": "4.5.0",
     "escape-goat": "4.0.0",
     "fast-glob": "3.3.3",
+    "friendly-challenge": "0.9.20",
     "htmx.org": "2.0.10",
     "idiomorph": "0.3.0",
     "jquery": "3.7.1",
@@ -123,7 +124,9 @@
     "vite-string-plugin": "2.0.4",
     "vitest": "5.0.1"
   },
-  "browserslist": ["defaults"],
+  "browserslist": [
+    "defaults"
+  ],
   "scarfSettings": {
     "enabled": false
   }

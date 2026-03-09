@@ -46,6 +46,12 @@ export async function initCaptcha() {
       });
       break;
     }
+    case 'frc-captcha': {
+      const {WidgetInstance} = await import(/* webpackChunkName: "mcaptcha-vanilla-glue" */'friendly-challenge');
+      if (isDark) captchaEl.classList.add('dark');
+      new WidgetInstance(captchaEl, params);
+      break;
+    }
     default:
   }
 }

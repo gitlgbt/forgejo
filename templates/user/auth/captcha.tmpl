@@ -27,4 +27,8 @@
 		<div id="captcha" data-captcha-type="cf-turnstile" data-sitekey="{{.CfTurnstileSitekey}}"></div>
 	</div>
 	<script defer src='https://challenges.cloudflare.com/turnstile/v0/api.js'></script>
+{{else if eq .CaptchaType "friendlycaptcha"}}
+	<div class="inline field tw-text-center">
+		<div id="captcha" class="frc-captcha" data-captcha-type="frc-captcha" data-sitekey="{{.FrcCaptchaSitekey}}"></div>
+	</div>
 {{end}}{{end}}

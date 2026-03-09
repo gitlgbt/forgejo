@@ -24,6 +24,7 @@ const (
 	HCaptcha     = "hcaptcha"
 	MCaptcha     = "mcaptcha"
 	CfTurnstile  = "cfturnstile"
+	FrcCaptcha   = "friendlycaptcha"
 )
 
 // Service settings
@@ -70,6 +71,8 @@ var Service = struct {
 	McaptchaSecret                          string
 	McaptchaSitekey                         string
 	McaptchaURL                             string
+	FrcCaptchaSitekey                       string
+	FrcCaptchaSecret                        string
 	DefaultKeepEmailPrivate                 bool
 	DefaultAllowCreateOrganization          bool
 	DefaultUserIsRestricted                 bool
@@ -234,6 +237,8 @@ func loadServiceFrom(rootCfg ConfigProvider) {
 	Service.McaptchaURL = sec.Key("MCAPTCHA_URL").MustString("https://demo.mcaptcha.org/")
 	Service.McaptchaSecret = sec.Key("MCAPTCHA_SECRET").MustString("")
 	Service.McaptchaSitekey = sec.Key("MCAPTCHA_SITEKEY").MustString("")
+	Service.FrcCaptchaSecret = sec.Key("FRC_CAPTCHA_SECRET").MustString("")
+	Service.FrcCaptchaSitekey = sec.Key("FRC_CAPTCHA_SITEKEY").MustString("")
 	Service.DefaultKeepEmailPrivate = sec.Key("DEFAULT_KEEP_EMAIL_PRIVATE").MustBool()
 	Service.DefaultAllowCreateOrganization = sec.Key("DEFAULT_ALLOW_CREATE_ORGANIZATION").MustBool(true)
 	Service.DefaultUserIsRestricted = sec.Key("DEFAULT_USER_IS_RESTRICTED").MustBool(false)

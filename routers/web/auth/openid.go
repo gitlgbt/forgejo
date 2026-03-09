@@ -346,6 +346,7 @@ func RegisterOpenID(ctx *context.Context) {
 	ctx.Data["RecaptchaURL"] = setting.Service.RecaptchaURL
 	ctx.Data["McaptchaSitekey"] = setting.Service.McaptchaSitekey
 	ctx.Data["McaptchaURL"] = setting.Service.McaptchaURL
+	ctx.Data["FrcCaptchaSitekey"] = setting.Service.FrcCaptchaSitekey
 	ctx.Data["CfTurnstileSitekey"] = setting.Service.CfTurnstileSitekey
 	ctx.Data["OpenID"] = oid
 	userName, _ := ctx.Session.Get("openid_determined_username").(string)
