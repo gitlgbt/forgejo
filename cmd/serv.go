@@ -148,9 +148,14 @@ func getKeyCheckMessage(
 		instanceName = strings.Join(appNameParts, " ")
 	}
 
+	// added git.gay ascii art cat for ssh login failure
 	msgTmpl := "Hi there%s! You've successfully authenticated with the %s, but %s " +
 		"does not provide shell access.\nIf this is unexpected, please log in with password and " +
-		"setup %s under another user."
+		"setup %s under another user.\n" +
+		"\n    |\\__/,|   (`\\" +
+		"\n  _.|o o  |_   ) )  - hey!!" +
+		"\n-(((---(((--------" +
+		"\n"
 	username := ""
 	var authenticatedWith string
 	switch key.Type {

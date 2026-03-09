@@ -51,13 +51,20 @@
 				{{else if eq .TabName "followers"}}
 					{{template "repo/user_cards" .}}
 				{{else if eq .TabName "overview"}}
-					<div id="readme_profile" class="{{if not .IsProfileReadmePlain}}markup{{end}}">
-					{{if .IsProfileReadmePlain}}
-						<pre>{{.ProfileReadme}}</pre>
-					{{else}}
-						{{.ProfileReadme}}
+					{{if .HasProfileReadme}}
+						<div id="readme_profile" class="{{if not .IsProfileReadmePlain}}markup{{end}}">
+						{{if .IsProfileReadmePlain}}
+							<pre>{{.ProfileReadme}}</pre>
+						{{else}}
+							{{.ProfileReadme}}
+						{{end}}
+						</div>
+						<div class="divider"></div>
 					{{end}}
-					</div>
+					{{template "explore/repo_grid" .}}
+					<div class="divider"></div>
+					{{template "user/heatmap" .}}
+					{{template "user/dashboard/feeds" .}}
 				{{else if and FederationEnabled (eq .TabName "feed")}}
 					{{if eq .SignedUserID .ContextUser.ID}}
 						{{if .FollowingFeeds}}

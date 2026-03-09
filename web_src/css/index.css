@@ -36,6 +36,7 @@
 @import "./modules/stats-bar.css";
 
 @import "./shared/flex-list.css";
+@import "./shared/grid-list.css";
 @import "./shared/milestone.css";
 @import "./shared/repoorg.css";
 @import "./shared/settings.css";

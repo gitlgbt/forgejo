@@ -8,6 +8,10 @@
   padding: 0 10px;
 }
 
+#navbar:has(+ .page-content > .secondary-nav) {
+  border-bottom-width: 0px;
+}
+
 #navbar .navbar-left,
 #navbar .navbar-right {
   margin: 0;

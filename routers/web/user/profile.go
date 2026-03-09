@@ -334,6 +334,46 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 				ctx.Data["IsProfileReadmePlain"] = true
 			}
 		}
+		repos, _, err = repo_model.SearchRepository(ctx, &repo_model.SearchRepoOptions{
+			ListOptions: db.ListOptions{
+				PageSize: 6,
+				Page:     0,
+			},
+			Actor:              ctx.Doer,
+			Keyword:            "",
+			OwnerID:            ctx.ContextUser.ID,
+			OrderBy:            db.SearchOrderByStarsReverse,
+			Private:            ctx.IsSigned,
+			Collaborate:        optional.Some(false),
+			TopicOnly:          topicOnly,
+			Language:           language,
+			IncludeDescription: setting.UI.SearchRepoDescription,
+		})
+		if err != nil {
+			ctx.ServerError("SearchRepository", err)
+			return
+		}
+		date := ctx.FormString("date")
+		pagingNum = setting.UI.FeedPagingNum
+		items, count, err := activities_model.GetFeeds(ctx, activities_model.GetFeedsOptions{
+			RequestedUser:   ctx.ContextUser,
+			Actor:           ctx.Doer,
+			IncludePrivate:  showPrivate,
+			OnlyPerformedBy: true,
+			Date:            date,
+			ListOptions: db.ListOptions{
+				PageSize: pagingNum,
+				Page:     page,
+			},
+		})
+		if err != nil {
+			ctx.ServerError("GetFeeds", err)
+			return
+		}
+		ctx.Data["Feeds"] = items
+		ctx.Data["Date"] = date
+
+		total = int(count)
 	default: // default to "repositories"
 		repos, count, err = repo_model.SearchRepository(ctx, &repo_model.SearchRepoOptions{
 			ListOptions: db.ListOptions{
