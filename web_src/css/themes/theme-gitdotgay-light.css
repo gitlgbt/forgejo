@@ -322,3 +322,33 @@
   background: var(--steel-450) !important;
   color: var(--color-white) !important;
 }
+
+.repository .ui.attached.isSigned.isVerified {
+  border-color: var(--color-green-badge);
+}
+
+.repository .ui.attached.isSigned.isVerified.top,
+.repository .ui.attached.isSigned.isVerified.message {
+  border-color: var(--color-green-badge);
+}
+
+.repository .ui.attached.isSigned.isVerified.message {
+  background-color: var(--color-green-badge-bg);
+  color: var(--color-green-badge);
+}
+
+.repository .ui.attached.isSigned.isVerified.message .ui.text {
+  color: var(--color-green-badge);
+}
+
+.repository .ui.attached.isSigned.isVerified:last-child,
+.repository .ui.attached.isSigned.isVerified.bottom {
+  border-color: var(--color-green-badge);
+}
+
+.repository .release-tag-name .ui.label.isSigned.isVerified,
+.repository .release-list-title .ui.label.isSigned.isVerified {
+  border-color: var(--color-green-badge);
+  background-color: var(--color-green-badge-bg);
+  color: var(--color-green-badge);
+}
