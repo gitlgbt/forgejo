@@ -15,6 +15,9 @@ import (
 
 var externalTrackerRegex = regexp.MustCompile(`({?)(?:user|repo|index)+?(}?)`)
 
+var validBadgeSlugPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
+var invalidBadgeSlugPattern = regexp.MustCompile(`[-._]{2,}|[-._]$`)
+
 func isLoopbackIP(ip string) bool {
 	return net.ParseIP(ip).IsLoopback()
 }
@@ -132,4 +135,8 @@ func IsValidUsername(name string) bool {
 // e.g. "username" in @username@example.tld.
 func IsValidActivityPubUsername(name string) bool {
 	return validFediverseUsernamePattern.MatchString(name)
+}
+
+func IsValidBadgeSlug(slug string) bool {
+	return validBadgeSlugPattern.MatchString(slug) && !invalidBadgeSlugPattern.MatchString(slug)
 }

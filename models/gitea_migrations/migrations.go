@@ -29,6 +29,7 @@ import (
 	"forgejo.org/models/gitea_migrations/v1_7"
 	"forgejo.org/models/gitea_migrations/v1_8"
 	"forgejo.org/models/gitea_migrations/v1_9"
+	"forgejo.org/models/migrations/v1_26"
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
@@ -368,6 +369,7 @@ func prepareMigrationTasks() []*migration {
 		// Migration to Forgejo v10
 		newMigration(303, "Gitea last drop", v1_23.GiteaLastDrop),
 		newMigration(304, "Migrate `secret` column to store keying material", forgejo_migrations_legacy.MigrateTwoFactorToKeying),
+		newMigration(305, "Add unique constraint for user badge", v1_26.AddUniqueIndexForUserBadge),
 	}
 	return preparedMigrations
 }

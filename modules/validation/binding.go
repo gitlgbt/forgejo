@@ -33,6 +33,8 @@ const (
 	ErrInvalidQuotaGroupMap = "InvalidQuotaGroupMap"
 	// ErrEmail is returned when an email address is invalid
 	ErrEmail = "Email"
+	// ErrInvalidBadgeSlug is returned when a badge slug is invalid
+	ErrInvalidBadgeSlug = "InvalidBadgeSlug"
 )
 
 // AddBindingRules adds additional binding rules
@@ -49,6 +51,7 @@ func AddBindingRules() {
 	addValidGroupTeamMapRule()
 	addValidQuotaGroupMapRule()
 	addEmailBindingRules()
+	addSlugPatternRule()
 }
 
 func addGitRefNameBindingRule() {
@@ -127,6 +130,22 @@ func addValidSiteURLBindingRule() {
 				return false, errs
 			}
 
+			return true, errs
+		},
+	})
+}
+
+func addSlugPatternRule() {
+	binding.AddRule(&binding.Rule{
+		IsMatch: func(rule string) bool {
+			return rule == "BadgeSlug"
+		},
+		IsValid: func(errs binding.Errors, name string, val any) (bool, binding.Errors) {
+			str := fmt.Sprintf("%v", val)
+			if !IsValidBadgeSlug(str) {
+				errs.Add([]string{name}, ErrInvalidBadgeSlug, "invalid badge slug")
+				return false, errs
+			}
 			return true, errs
 		},
 	})
