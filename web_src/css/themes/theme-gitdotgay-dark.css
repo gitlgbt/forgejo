@@ -266,7 +266,6 @@
   --color-tooltip-bg: #000000f0;
   --color-nav-bg: var(--steel-900);
   --color-nav-hover-bg: var(--steel-600);
-  --color-nav-text: var(--color-text);
   --color-secondary-nav-bg: var(--steel-900);
   --color-label-text: #fff;
   --color-label-bg: var(--steel-600);
@@ -278,9 +277,17 @@
   --color-highlight-fg: var(--color-primary-light-4);
   --color-highlight-bg: var(--color-primary-alpha-20);
   --color-overlay-backdrop: #080808c0;
+  --color-selection-bg: var(--steel-100);
+  --color-selection-fg: var(--color-pure-black);
   /* pattern colors for image diff */
   --checkerboard-color-1: #474747;
   --checkerboard-color-2: #313131;
+  --color-indicator-offline: #a1a1aa;
+  --color-indicator-offline-20: #a1a1aa1a;
+  --color-indicator-idle: #16a34a;
+  --color-indicator-idle-20: #16a34a1a;
+  --color-indicator-active: #2185d0;
+  --color-indicator-active-20: #2185d033;
   accent-color: var(--color-accent);
   color-scheme: dark;
   --fonts-proportional: "DM Sans", -apple-system, "Segoe UI", system-ui, "Noto Sans", "Noto Sans Hebrew", Roboto, "Helvetica Neue", Arial;
@@ -349,11 +356,6 @@ i.grey.icon.icon.icon.icon {
 
 .ui.yellow.label.pending-label {
   color: var(--color-warning-text) !important;
-}
-
-::selection {
-  background: var(--steel-100) !important;
-  color: var(--color-pure-black) !important;
 }
 
 strong.attention-important,
@@ -425,10 +427,12 @@ svg.attention-caution {
   border-radius: .28571429rem !important;
   color: inherit !important;
 }
+
 .frc-captcha *,
 .frc-captcha.dark * {
   color: inherit !important;
 }
+
 .frc-captcha.dark .frc-button,
 .frc-button {
   border-color: var(--color-input-border) !important;
@@ -436,7 +440,8 @@ svg.attention-caution {
   border-radius: 2px !important;
   transition: background .1s ease !important;
 }
+
 .frc-captcha.dark .frc-button:hover,
 .frc-button:hover {
-  background: var(--color-hover) !important;	
+  background: var(--color-hover) !important;
 }

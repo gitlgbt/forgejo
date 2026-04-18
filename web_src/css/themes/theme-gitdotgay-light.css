@@ -263,7 +263,6 @@
   --color-tooltip-bg: #000000f0;
   --color-nav-bg: var(--zinc-100);
   --color-nav-hover-bg: var(--zinc-300);
-  --color-nav-text: var(--color-text);
   --color-secondary-nav-bg: var(--zinc-100);
   --color-label-text: var(--color-text);
   --color-label-bg: #cacaca7b;
@@ -275,9 +274,17 @@
   --color-highlight-fg: var(--color-primary-light-4);
   --color-highlight-bg: var(--color-primary-light-6);
   --color-overlay-backdrop: #080808c0;
+  --color-selection-bg: var(--steel-450);
+  --color-selection-fg: var(--color-white);
   /* pattern colors for gradient */
   --checkerboard-color-1: #ffffff;
   --checkerboard-color-2: #e5e5e5;
+  --color-indicator-offline: #52525b;
+  --color-indicator-offline-20: #52525b33;
+  --color-indicator-idle: #16a34a;
+  --color-indicator-idle-20: #16a34a33;
+  --color-indicator-active: #2185d0;
+  --color-indicator-active-20: #2185d033;
   accent-color: var(--color-accent);
   color-scheme: light;
 }
@@ -318,11 +325,6 @@
   color: var(--color-text-dark) !important;
 }
 
-::selection {
-  background: var(--steel-450) !important;
-  color: var(--color-white) !important;
-}
-
 .repository .ui.attached.isSigned.isVerified {
   border-color: var(--color-green-badge);
 }
@@ -361,10 +363,12 @@
   border-radius: .28571429rem !important;
   color: inherit !important;
 }
+
 .frc-captcha *,
 .frc-captcha.dark * {
   color: inherit !important;
 }
+
 .frc-captcha.dark .frc-button,
 .frc-button {
   border-color: var(--color-input-border) !important;
@@ -372,7 +376,8 @@
   border-radius: 2px !important;
   transition: background .1s ease !important;
 }
+
 .frc-captcha.dark .frc-button:hover,
 .frc-button:hover {
-  background: var(--color-hover) !important;	
+  background: var(--color-hover) !important;
 }
