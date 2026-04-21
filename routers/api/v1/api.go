@@ -1007,7 +1007,7 @@ func Routes() *web.Route {
 							Delete(reqToken(), reqRepoWriter(unit.TypeReleases), repo.DeleteReleaseByTag)
 					})
 				}, reqRepoReader(unit.TypeReleases))
-				m.Post("/mirror-sync", reqToken(), reqRepoWriter(unit.TypeCode), mustNotBeArchived(), context.EnforceQuotaAPI(quota_model.LimitSubjectSizeGitAll, context.QuotaTargetRepo), repo.MirrorSync)
+				m.Post("/mirror-sync", reqToken(), reqRepoWriter(unit.TypeCode), mustNotBeArchived(), context.EnforceQuotaAPI(quota_model.LimitSubjectSizeReposAll, context.QuotaTargetRepo), repo.MirrorSync)
 				m.Post("/push_mirrors-sync", reqAdmin(), reqToken(), mustNotBeArchived(), repo.PushMirrorSync)
 				m.Group("/push_mirrors", func() {
 					m.Combo("").Get(repo.ListPushMirrors).
@@ -1026,11 +1026,11 @@ func Routes() *web.Route {
 						m.Combo("").Get(repo.GetPullRequest).
 							Patch(reqToken(), bind(api.EditPullRequestOption{}), repo.EditPullRequest)
 						m.Get(".{diffType:diff|patch}", repo.DownloadPullDiffOrPatch)
-						m.Post("/update", reqToken(), context.EnforceQuotaAPI(quota_model.LimitSubjectSizeGitAll, context.QuotaTargetRepo), repo.UpdatePullRequest)
+						m.Post("/update", reqToken(), context.EnforceQuotaAPI(quota_model.LimitSubjectSizeReposAll, context.QuotaTargetRepo), repo.UpdatePullRequest)
 						m.Get("/commits", repo.GetPullRequestCommits)
 						m.Get("/files", repo.GetPullRequestFiles)
 						m.Combo("/merge").Get(repo.IsPullRequestMerged).
-							Post(reqToken(), mustNotBeArchived(), bind(forms.MergePullRequestForm{}), context.EnforceQuotaAPI(quota_model.LimitSubjectSizeGitAll, context.QuotaTargetRepo), repo.MergePullRequest).
+							Post(reqToken(), mustNotBeArchived(), bind(forms.MergePullRequestForm{}), context.EnforceQuotaAPI(quota_model.LimitSubjectSizeReposAll, context.QuotaTargetRepo), repo.MergePullRequest).
 							Delete(reqToken(), mustNotBeArchived(), repo.CancelScheduledAutoMerge)
 						m.Group("/reviews", func() {
 							m.Combo("").
