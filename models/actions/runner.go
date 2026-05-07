@@ -5,8 +5,8 @@ package actions
 
 import (
 	"context"
+	"crypto/subtle"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"strings"
 	"time"
@@ -53,7 +53,7 @@ type ActionRunner struct {
 
 	Token     string `xorm:"-"`
 	TokenHash string `xorm:"UNIQUE"` // sha256 of token
-	TokenSalt string
+	TokenSalt string // Deprecated: TokenHash is no longer salted, this is only non-empty for pre-existing hashes
 	// TokenLastEight string `xorm:"token_last_eight"` // it's unnecessary because we don't find runners by token
 
 	LastOnline timeutil.TimeStamp `xorm:"index"`
@@ -177,18 +177,26 @@ func (r *ActionRunner) LoadAttributes(ctx context.Context) error {
 }
 
 func (r *ActionRunner) GenerateToken() {
-	r.Token, r.TokenSalt, r.TokenHash, _ = generateSaltedToken()
+	r.TokenSalt = ""
+	r.Token, r.TokenHash, _ = generateToken()
 }
 
 // UpdateSecret updates the hash based on the specified token. It does not
 // ensure that the runner's UUID matches the first 16 bytes of the token.
-func (r *ActionRunner) UpdateSecret(token string) error {
-	salt := hex.EncodeToString(util.CryptoRandomBytes(16))
-
+func (r *ActionRunner) UpdateSecret(token string) {
 	r.Token = token
-	r.TokenSalt = salt
-	r.TokenHash = auth_model.HashToken(token, salt)
-	return nil
+	r.TokenSalt = ""
+	r.TokenHash = auth_model.HashValidator([]byte(token))
+}
+
+func (r *ActionRunner) VerifyToken(token string) bool {
+	var hash string
+	if r.TokenSalt != "" {
+		hash = auth_model.HashToken(token, r.TokenSalt)
+	} else {
+		hash = auth_model.HashValidator([]byte(token))
+	}
+	return subtle.ConstantTimeCompare([]byte(r.TokenHash), []byte(hash)) == 1
 }
 
 func init() {

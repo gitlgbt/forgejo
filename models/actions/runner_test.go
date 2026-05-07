@@ -4,6 +4,7 @@ package actions
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"forgejo.org/models/unittest"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/timeutil"
+	"forgejo.org/modules/util"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -25,12 +27,46 @@ func TestUpdateSecret(t *testing.T) {
 	runner := ActionRunner{}
 	token := "0123456789012345678901234567890123456789"
 
-	err := runner.UpdateSecret(token)
+	runner.UpdateSecret(token)
 
-	require.NoError(t, err)
 	assert.Equal(t, token, runner.Token)
-	assert.Regexp(t, "^[0-9a-f]{32}$", runner.TokenSalt)
-	assert.Equal(t, runner.TokenHash, auth_model.HashToken(token, runner.TokenSalt))
+	assert.Empty(t, runner.TokenSalt)
+	assert.Equal(t, runner.TokenHash, auth_model.HashValidator([]byte(token)))
+}
+
+func TestGenerateToken(t *testing.T) {
+	runner := ActionRunner{}
+	runner.GenerateToken()
+
+	assert.Empty(t, runner.TokenSalt)
+	assert.NotEmpty(t, runner.Token)
+	assert.Equal(t, runner.TokenHash, auth_model.HashValidator([]byte(runner.Token)))
+}
+
+func TestVerifyToken(t *testing.T) {
+	runner := ActionRunner{}
+	runner.GenerateToken()
+
+	legacyRunner := ActionRunner{}
+	legacyRunner.TokenSalt = util.CryptoRandomString(util.RandomStringMedium)
+	legacyRunner.Token = hex.EncodeToString(util.CryptoRandomBytes(20))
+	legacyRunner.TokenHash = auth_model.HashToken(legacyRunner.Token, legacyRunner.TokenSalt)
+
+	t.Run("valid token", func(t *testing.T) {
+		assert.True(t, runner.VerifyToken(runner.Token))
+	})
+
+	t.Run("invalid token", func(t *testing.T) {
+		assert.False(t, runner.VerifyToken("invalid"))
+	})
+
+	t.Run("valid legacy token", func(t *testing.T) {
+		assert.True(t, legacyRunner.VerifyToken(legacyRunner.Token))
+	})
+
+	t.Run("invalid legacy token", func(t *testing.T) {
+		assert.False(t, legacyRunner.VerifyToken("invalid"))
+	})
 }
 
 func TestDeleteRunner(t *testing.T) {

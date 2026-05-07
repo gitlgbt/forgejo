@@ -409,7 +409,7 @@ func TestAPIAdminActionsRunnerOperations(t *testing.T) {
 		assert.Empty(t, registeredRunner.AgentLabels)
 		assert.Empty(t, registeredRunner.Version)
 		assert.NotEmpty(t, registeredRunner.TokenHash)
-		assert.NotEmpty(t, registeredRunner.TokenSalt)
+		assert.Empty(t, registeredRunner.TokenSalt)
 		assert.False(t, registeredRunner.Ephemeral)
 	})
 

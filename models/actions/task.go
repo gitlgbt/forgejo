@@ -40,7 +40,7 @@ type ActionTask struct {
 
 	Token          string `xorm:"-"`
 	TokenHash      string `xorm:"UNIQUE"` // sha256 of token
-	TokenSalt      string
+	TokenSalt      string // Deprecated: TokenHash is no longer salted, this is only non-empty for pre-existing hashes
 	TokenLastEight string `xorm:"index token_last_eight"`
 
 	LogFilename  string     // file name of log
@@ -152,7 +152,8 @@ func (task *ActionTask) LoadAttributes(ctx context.Context) error {
 }
 
 func (task *ActionTask) GenerateToken() {
-	task.Token, task.TokenSalt, task.TokenHash, task.TokenLastEight = generateSaltedToken()
+	task.TokenSalt = ""
+	task.Token, task.TokenHash, task.TokenLastEight = generateToken()
 }
 
 // After using GenerateToken, UpdateToken can be used to update the database record affecting the same columns.
@@ -242,8 +243,13 @@ func GetRunningTaskByToken(ctx context.Context, token string) (*ActionTask, erro
 	}
 
 	for _, t := range tasks {
-		tempHash := auth_model.HashToken(token, t.TokenSalt)
-		if subtle.ConstantTimeCompare([]byte(t.TokenHash), []byte(tempHash)) == 1 {
+		var hash string
+		if t.TokenSalt != "" {
+			hash = auth_model.HashToken(token, t.TokenSalt)
+		} else {
+			hash = auth_model.HashValidator([]byte(token))
+		}
+		if subtle.ConstantTimeCompare([]byte(t.TokenHash), []byte(hash)) == 1 {
 			if successfulTokenTaskCache != nil {
 				successfulTokenTaskCache.Add(token, t.ID)
 			}

@@ -17,11 +17,10 @@ import (
 	"forgejo.org/modules/util"
 )
 
-func generateSaltedToken() (string, string, string, string) {
-	salt := util.CryptoRandomString(util.RandomStringMedium)
+func generateToken() (string, string, string) {
 	token := hex.EncodeToString(util.CryptoRandomBytes(20))
-	hash := auth_model.HashToken(token, salt)
-	return token, salt, hash, token[len(token)-8:]
+	hash := auth_model.HashValidator([]byte(token))
+	return token, hash, token[len(token)-8:]
 }
 
 /*

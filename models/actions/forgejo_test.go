@@ -3,10 +3,8 @@
 package actions
 
 import (
-	"crypto/subtle"
 	"testing"
 
-	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/models/unittest"
 
@@ -28,7 +26,7 @@ func TestActions_RegisterRunner_Token(t *testing.T) {
 	assert.Equal(t, name, runner.Name)
 	assert.True(t, runner.Ephemeral)
 
-	assert.Equal(t, 1, subtle.ConstantTimeCompare([]byte(runner.TokenHash), []byte(auth_model.HashToken(token, runner.TokenSalt))), "the token cannot be verified with the same method as routers/api/actions/runner/interceptor.go as of 8228751c55d6a4263f0fec2932ca16181c09c97d")
+	assert.True(t, runner.VerifyToken(token), "the token cannot be verified with the same method as routers/api/actions/runner/interceptor.go as of 8228751c55d6a4263f0fec2932ca16181c09c97d")
 }
 
 // TestActions_RegisterRunner_TokenUpdate tests that a token's secret is updated
@@ -41,24 +39,15 @@ func TestActions_RegisterRunner_TokenUpdate(t *testing.T) {
 	newToken := "7e577e577e577e57deadbeefdeadbeefdeadbeef"
 	require.NoError(t, unittest.PrepareTestDatabase())
 	before := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: recordID})
-	require.Equal(t,
-		before.TokenHash, auth_model.HashToken(oldToken, before.TokenSalt),
-		"the initial token should match the runner's secret",
-	)
+	require.True(t, before.VerifyToken(oldToken), "the initial token should match the runner's secret")
 
 	RegisterRunner(db.DefaultContext, before.OwnerID, before.RepoID, newToken, nil, before.Name, before.Version, false)
 
 	after := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: recordID})
 
 	assert.Equal(t, before.UUID, after.UUID)
-	assert.NotEqual(t,
-		after.TokenHash, auth_model.HashToken(oldToken, after.TokenSalt),
-		"the old token can still be verified",
-	)
-	assert.Equal(t,
-		after.TokenHash, auth_model.HashToken(newToken, after.TokenSalt),
-		"the new token cannot be verified",
-	)
+	assert.False(t, after.VerifyToken(oldToken), "the old token must no longer verify")
+	assert.True(t, after.VerifyToken(newToken), "the new token must verify")
 }
 
 func TestActions_RegisterRunner_CreateWithLabels(t *testing.T) {

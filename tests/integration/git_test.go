@@ -57,6 +57,7 @@ func TestActionsTokenAuth(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		task := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionTask{ID: 47})
 		task.GenerateToken()
+		task.UpdateToken(db.DefaultContext)
 		actions_model.UpdateTask(db.DefaultContext, task)
 		u.User = url.UserPassword("token", task.Token)
 

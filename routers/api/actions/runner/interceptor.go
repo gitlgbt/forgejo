@@ -5,13 +5,11 @@ package runner
 
 import (
 	"context"
-	"crypto/subtle"
 	"errors"
 	"strings"
 	"time"
 
 	actions_model "forgejo.org/models/actions"
-	auth_model "forgejo.org/models/auth"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
@@ -41,7 +39,7 @@ var withRunner = connect.WithInterceptors(connect.UnaryInterceptorFunc(func(unar
 			}
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		if subtle.ConstantTimeCompare([]byte(runner.TokenHash), []byte(auth_model.HashToken(token, runner.TokenSalt))) != 1 {
+		if !runner.VerifyToken(token) {
 			return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("unregistered runner"))
 		}
 
@@ -50,6 +48,10 @@ var withRunner = connect.WithInterceptors(connect.UnaryInterceptorFunc(func(unar
 		if !runner.LastOnline.AsLocalTime().Truncate(time.Minute).Equal(now.AsLocalTime().Truncate(time.Minute)) {
 			runner.LastOnline = now
 			cols = append(cols, "last_online")
+		}
+		if runner.TokenSalt != "" {
+			runner.UpdateSecret(runner.Token)
+			cols = append(cols, "token_hash", "token_salt")
 		}
 		if methodName == "UpdateTask" || methodName == "UpdateLog" {
 			if !runner.LastActive.AsLocalTime().Truncate(time.Minute).Equal(now.AsLocalTime().Truncate(time.Minute)) {
