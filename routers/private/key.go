@@ -53,9 +53,13 @@ func AuthorizedPublicKeyByFingerprint(ctx *context.PrivateContext) {
 		Fingerprint: ctx.FormString("content"),
 	}.ToConds())
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, private.Response{
-			Err: err.Error(),
-		})
+		if asymkey_model.IsErrKeyNotExist(err) {
+			ctx.PlainText(http.StatusOK, "")
+		} else {
+			ctx.JSON(http.StatusInternalServerError, private.Response{
+				Err: err.Error(),
+			})
+		}
 		return
 	}
 	if !exists {
