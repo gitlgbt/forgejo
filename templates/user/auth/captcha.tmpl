@@ -1,8 +1,8 @@
 {{if .EnableCaptcha}}
 	<div class="required field {{if .Err_Captcha}}error{{end}}">
 		<label for="captcha">
-			{{ctx.Locale.Tr "captcha"}}
-			<span id="captcha-aid">Please enter the following number or word into the captcha field:</span>
+			{{ctx.Locale.Tr "captcha"}}:
+			<span id="captcha-aid">{{ctx.Locale.Tr "cregister.captcha"}}</span>
 		</label>
 		<div class="inline field tw-text-center" aria-hidden="true">
 			<input type="hidden" name="img-captcha-id" value="{{.Captcha}}">

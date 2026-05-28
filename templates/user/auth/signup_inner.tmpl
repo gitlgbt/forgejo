@@ -46,11 +46,11 @@
 				{{template "user/auth/captcha" .}}
 
 				<div class="ui message" style="text-align: start;" tabindex=0 aria-labelledby="consent">
-					<p id="consent">By registering for a Codeberg account, you consent to our <a href="https://codeberg.org/codeberg/org/src/PrivacyPolicy.md">Privacy Policy</a> and agree to our <a href="https://codeberg.org/codeberg/org/src/TermsOfUse.md">Terms of Use</a>.</p>
+					<p id="consent">{{ctx.Locale.Tr "cregister.tos" "https://codeberg.org/codeberg/org/src/PrivacyPolicy.md" "https://codeberg.org/codeberg/org/src/TermsOfUse.md"}}</p>
 				</div>
 
 				<div class="ui message" style="text-align: start; color:var(--color-warning-text);" tabindex=0 aria-labelledby="warning">
-					<p id="warning">Using Codeberg to spread SEO spam, malware, links to IPTV services ("tvbox") or pirated content <b>will</b> result in an immediate ban with <b>no prior warning</b>.</p>
+					<p id="warning">{{ctx.Locale.Tr "cregister.tos.warn"}}</p>
 				</div>
 
 
@@ -65,9 +65,9 @@
 				</div>
 				<div class="ui message" style="text-align: start;" tabindex=0 aria-labelledby="captcha-intro captcha-aid codeberg-service captcha-morehelp">
 					<!-- the IDs are explicit, because they are also referenced as the label of the captcha input -->
-					<p id="captcha-intro">This page currently has a captcha required to complete the registration.</p>
-					<p id="captcha-plan">We are <a href="https://codeberg.org/Codeberg/Community/issues/1797">planning to drop the captcha</a> by improving moderation and spam detection. (state: March 2025).</p>
-					<p id="captcha-morehelp">If you have difficulties solving the captcha, please contact us at <a href="mailto:contact@codeberg.org">contact@codeberg.org</a> in the meantime and let us know your prefered account name.</p>
+					<p id="captcha-intro">{{ctx.Locale.Tr "cregister.captcha_msg.intro"}}</p>
+					<p id="captcha-plan">{{ctx.Locale.Tr "cregister.captcha_msg.plan" "https://codeberg.org/Codeberg/Community/issues/1797"}}</p>
+					<p id="captcha-morehelp">{{ctx.Locale.Tr "cregister.captcha_msg.morehelp" "mailto:contact@codeberg.org" "contact@codeberg.org"}}</p>
 				</div>
 			{{end}}
 

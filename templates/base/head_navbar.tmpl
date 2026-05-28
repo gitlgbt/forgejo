@@ -49,8 +49,8 @@
 		{{end}}
 
 		{{if not .IsSigned}}
-			<a class="item" target="_blank" href="https://docs.codeberg.org/getting-started/what-is-codeberg/#what-is-codeberg-e.v.%3F">About</a>
-			<a class="item" target="_blank" href="https://docs.codeberg.org/getting-started/faq/">FAQ</a>
+			<a class="item" target="_blank" href="https://docs.codeberg.org/getting-started/what-is-codeberg/#what-is-codeberg-e.v.%3F">{{ctx.Locale.Tr "cheader.about"}}</a>
+			<a class="item" target="_blank" href="https://docs.codeberg.org/getting-started/faq/">{{ctx.Locale.Tr "cheader.faq"}}</a>
 			<a class="item" target="_blank" rel="noopener noreferrer" href="https://docs.codeberg.org">{{ctx.Locale.Tr "help"}}</a>
 		{{end}}
 

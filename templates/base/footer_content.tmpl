@@ -6,58 +6,58 @@
 				<img class="dark-logo" loading="lazy" src="https://design.codeberg.org/logo-kit/icon_inverted.svg" alt="{{ctx.Locale.Tr "logo"}}">
 			</div>
 			<div class="powered-by">
-				<div class="title">Powered by</div>
+				<div class="title">{{ctx.Locale.Tr "powered_by" ""}}</div>
 				<a target="_blank" rel="noopener noreferrer" href="https://forgejo.org" aria-label="Forgejo">
 					<div class="branding" aria-hidden="true">
-						<img class="light-logo" loading="lazy" src="/assets/img/svg/forgejo-wordmark.svg" alt="Forgejo logo">
-						<img class="dark-logo" loading="lazy" src="/assets/img/svg/forgejo-wordmark-mono.svg" alt="Forgejo logo">
+						<img class="light-logo" loading="lazy" src="/assets/img/svg/forgejo-wordmark.svg" alt="{{ctx.Locale.Tr "cfooter.forgejo_logo"}}">
+						<img class="dark-logo" loading="lazy" src="/assets/img/svg/forgejo-wordmark-mono.svg" alt="{{ctx.Locale.Tr "cfooter.forgejo_logo"}}">
 					</div>
 				</a>
-				with <a class="tw-mt-0" href="/Codeberg-Infrastructure/forgejo" target="_blank">modifications</a>
+				{{ctx.Locale.Tr "cfooter.poweredby.mods"}}
 			</div>
 		</div>
 		<div>
 			<b id="codeberg-codeberg">Codeberg</b>
 			<ul>
-				<li><a href="https://blog.codeberg.org" target="_blank">Blog</a></li>
-				<li><a href="https://docs.codeberg.org" target="_blank">Documentation</a></li>
-				<li><a href="/Codeberg/Community/issues">Community Issues</a></li>
+				<li><a href="https://blog.codeberg.org" target="_blank">{{ctx.Locale.Tr "cfooter.blog"}}</a></li>
+				<li><a href="https://docs.codeberg.org" target="_blank">{{ctx.Locale.Tr "cfooter.docs"}}</a></li>
+				<li><a href="/Codeberg/Community/issues">{{ctx.Locale.Tr "cfooter.issues"}}</a></li>
 				{{if .IsSigned}}
-					<li><a href="/about">Landing Page</a></li>
+					<li><a href="/about">{{ctx.Locale.Tr "cfooter.landing"}}</a></li>
 				{{end}}
-				<li><a href="/Codeberg/Contributing">Contributing</a>
-				<li><a href="https://docs.{{AppDomain}}/contact/#abuse" target="_blank">Report Abuse</a>
+				<li><a href="/Codeberg/Contributing">{{ctx.Locale.Tr "cfooter.contrib"}}</a>
+				<li><a href="https://docs.{{AppDomain}}/contact/#abuse" target="_blank">{{ctx.Locale.Tr "moderation.report_abuse"}}</a>
 			</ul>
 		</div>
 		<div>
-			<b id="codeberg-association">Association</b>
+			<b id="codeberg-association">{{ctx.Locale.Tr "cfooter.association"}}</b>
 			<ul>
-				<li><a href="https://docs.codeberg.org/getting-started/what-is-codeberg/#what-is-codeberg-e.v.%3F" target="_blank">Who are we?</a></li>
-				<li><a href="/codeberg/org/src/en/bylaws.md" target="_blank">Bylaws / Satzung</a></li>
-				<li><a href="https://docs.codeberg.org/improving-codeberg/donate/" target="_blank">Donate</a></li>
-				<li><a href="https://join.codeberg.org" target="_blank">Join / Support</a></li>
-				<li><a href="https://docs.codeberg.org/contact/" target="_blank">Contact</a></li>
+				<li><a href="https://docs.codeberg.org/getting-started/what-is-codeberg/#what-is-codeberg-e.v.%3F" target="_blank">{{ctx.Locale.Tr "cfooter.association.who"}}</a></li>
+				<li><a href="{{ctx.Locale.Tr "cfooter.association.satzung.href"}}" target="_blank">{{ctx.Locale.Tr "cfooter.association.satzung"}}</a></li>
+				<li><a href="https://docs.codeberg.org/improving-codeberg/donate/" target="_blank">{{ctx.Locale.Tr "cfooter.donate"}}</a></li>
+				<li><a href="https://join.codeberg.org" target="_blank">{{ctx.Locale.Tr "cfooter.association.join"}}</a></li>
+				<li><a href="https://docs.codeberg.org/contact/" target="_blank">{{ctx.Locale.Tr "cfooter.association.contact"}}</a></li>
 			</ul>
 		</div>
 		<div>
-			<b id="codeberg-service">Services</b>
+			<b id="codeberg-service">{{ctx.Locale.Tr "cfooter.service"}}</b>
 			<ul>
-				<li><a href="https://codeberg.page" target="_blank">Codeberg Pages</a></li>
-				<li><a href="https://translate.codeberg.org" target="_blank">Codeberg Translate</a></li>
+				<li><a href="https://codeberg.page" target="_blank">{{ctx.Locale.Tr "cfooter.service.pages"}}</a></li>
+				<li><a href="https://translate.codeberg.org" target="_blank">{{ctx.Locale.Tr "cfooter.service.i18n"}}</a></li>
 				<li><a href="https://docs.codeberg.org/ci/#using-codeberg's-instance-of-woodpecker-ci" target="_blank">Woodpecker CI</a></li>
 				{{if .EnableSwagger}}
 					<li><a href="{{AppSubUrl}}/api/swagger">Forgejo API</a></li>
 				{{end}}
-				<li><a href="https://status.codeberg.eu" target="_blank">Status Page</a></li>
+				<li><a href="https://status.codeberg.eu" target="_blank">{{ctx.Locale.Tr "cfooter.service.status"}}</a></li>
 			</ul>
 		</div>
 		<div>
-			<b id="codeberg-legal">Legal</b>
+			<b id="codeberg-legal">{{ctx.Locale.Tr "cfooter.legal"}}</b>
 			<ul>
-				<li><a href="/codeberg/org/src/Imprint.md" target="_blank">Imprint / Impressum</a></li>
-				<li><a href="/codeberg/org/src/PrivacyPolicy.md" target="_blank">Privacy Policy</a></li>
+				<li><a href="{{ctx.Locale.Tr "cfooter.legal.impressum.href"}}" target="_blank">{{ctx.Locale.Tr "cfooter.legal.impressum"}}</a></li>
+				<li><a href="/codeberg/org/src/PrivacyPolicy.md" target="_blank">{{ctx.Locale.Tr "cfooter.legal.privacy"}}</a></li>
 				<li><a href="{{AssetUrlPrefix}}/licenses.txt">{{ctx.Locale.Tr "licenses"}}</a></li>
-				<li><a href="/codeberg/org/src/TermsOfUse.md">Terms of Use</a></li>
+				<li><a href="/codeberg/org/src/TermsOfUse.md">{{ctx.Locale.Tr "cfooter.legal.tos"}}</a></li>
 			</ul>
 		</div>
 	</div>
@@ -65,7 +65,7 @@
 		<div class="footer-social">
 			<a href="https://social.anoxinon.de/@Codeberg" target="_blank" rel="noopener noreferrer">Mastodon</a> |
 			<a href="matrix:r/codeberg-space:matrix.org?action=join" target="_blank" rel="noopener noreferrer">Matrix Space</a>
-			<a href="https://matrix.to/#/#codeberg-space:matrix.org" target="_blank" rel="noopener noreferrer">(Web link)</a>
+			<a href="https://matrix.to/#/#codeberg-space:matrix.org" target="_blank" rel="noopener noreferrer">({{ctx.Locale.Tr "cfooter.extra.weblink"}})</a>
 			<button class="btn interact-fg tw-p-2 tw-inline" data-clipboard-text="#codeberg-space:matrix.org" data-tooltip-content="Copy to clipboard">{{svg "octicon-copy" 14}}</button>
 			<p class="only-mobile">
 				<a target="_blank" rel="noopener noreferrer" href="https://forgejo.org">{{ctx.Locale.Tr "powered_by" "Forgejo"}}</a>

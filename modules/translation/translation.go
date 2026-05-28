@@ -125,6 +125,16 @@ func InitLocales(ctx context.Context) {
 			} else {
 				log.Error("Failed to open new-style messages for %s: %v", setting.Langs[i], err)
 			}
+
+			// Codeberg-specific strings
+			key = "locale_codeberg/locale_" + setting.Langs[i] + ".json"
+			if bytes, err := options.AssetFS().ReadFile(key); err == nil {
+				if err = i18n.DefaultLocales.AddToLocaleFromJSON(setting.Langs[i], bytes); err != nil {
+					log.Error("Failed to add Codeberg messages to %s: %v", setting.Langs[i], err)
+				}
+			} else {
+				log.Error("Failed to open Codeberg messages for %s: %v", setting.Langs[i], err)
+			}
 		}
 		if len(setting.Langs) != 0 {
 			defaultLangName := setting.Langs[0]
