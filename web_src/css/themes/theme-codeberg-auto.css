@@ -1,5 +1,7 @@
-/* Basic styles for Codeberg */
-@import "theme-codeberg-light.css";
+/*
+ * Note: @import are being recursively resolved by webpack right into the files
+ * where they are used. No need to worry about roundtripping during page load.
+ */
 
+@import "theme-codeberg-light.css" (prefers-color-scheme: light);
 @import "theme-codeberg-dark.css" (prefers-color-scheme: dark);
-

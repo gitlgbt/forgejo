@@ -31,5 +31,5 @@ insert_final_newline = false
 insert_final_newline = false
 
 # Weblate is configured to use one tab for indention
-[options/locale_next/locale_*.json]
+[options/locale_next/locale_*.json,options/locale_codeberg/locale_*.json]
 indent_style = tab

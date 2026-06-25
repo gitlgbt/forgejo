@@ -1,13 +1,8 @@
-:root {
-    --gitea-color-scheme-1: #2185d0;
-    --gitea-text-color: #FFF;
-}
-
 #navbar .ui.red.label, #navbar .ui.red.labels .label { box-shadow: 0 0 1px 1px #c82121; }
 
 * {
-	scrollbar-width: initial;
-	scrollbar-color: initial;
+  scrollbar-width: initial;
+  scrollbar-color: initial;
 }
 
 /* Codeberg and Forgejo logos with dynamic theme change */
@@ -15,31 +10,36 @@
   display: none;
 }
 html[data-theme^="forgejo-light"],
-html[data-theme^="gitea-light"] {
+html[data-theme^="gitea-light"],
+html[data-theme^="codeberg-light"] footer {
   .branding > img.light-logo {
     display: inline;
   }
 }
 html[data-theme^="forgejo-light"],
-html[data-theme^="gitea-light"] {
+html[data-theme^="gitea-light"],
+html[data-theme^="codeberg-light"] footer {
   .branding > img.dark-logo {
-	  display: none;
+    display: none;
   }
 }
 @media (prefers-color-scheme: light) {
   html[data-theme^="forgejo-auto"],
-  html[data-theme^="gitea-auto"] {
+  html[data-theme^="gitea-auto"],
+  html[data-theme^="codeberg-auto"] footer {
     .branding > img.light-logo {
-		  display: inline;
+      display: inline;
     }
-	}
+  }
   html[data-theme^="forgejo-auto"],
-  html[data-theme^="gitea-auto"] {
+  html[data-theme^="gitea-auto"],
+  html[data-theme^="codeberg-auto"] footer {
     .branding > img.dark-logo {
       display: none;
     }
   }
 }
+
 #navbar .branding,
 .powered-by .branding {
   display: flex;
@@ -47,29 +47,30 @@ html[data-theme^="gitea-light"] {
 
 /* Donate button with animated gradient */
 @property --donation-pretty-gradient-color-1 {
-  syntax: '<color>';
+  syntax: "<color>";
   initial-value: #000;
   inherits: false;
 }
 
 @property --donation-pretty-gradient-color-2 {
-  syntax: '<color>';
+  syntax: "<color>";
   initial-value: #000;
   inherits: false;
 }
 .donation-pretty {
-  --donation-pretty-gradient-color-1: var(--color-secondary-alpha-60);
-  --donation-pretty-gradient-color-2: var(--color-secondary-alpha-60);
-  background: linear-gradient(
-    to top right,
-    var(--donation-pretty-gradient-color-1), var(--donation-pretty-gradient-color-2)
-  ) !important;
+  --donation-pretty-gradient-color-1: var(--color-nav-bg);
+  --donation-pretty-gradient-color-2: var(--color-nav-bg);
+
+  background: linear-gradient(to top right,
+  var(--donation-pretty-gradient-color-1), var(--donation-pretty-gradient-color-2)) !important;
   transition: color 125ms, --donation-pretty-gradient-color-1 250ms, --donation-pretty-gradient-color-2 0ms !important;
-}
-.donation-pretty:hover {
-  --donation-pretty-gradient-color-1: var(--color-primary-light-2);
-  --donation-pretty-gradient-color-2: var(--color-primary-light-1);
-  color: #fff !important;
+  border: 1px dashed var(--color-text) !important;
+
+  &:hover {
+    --donation-pretty-gradient-color-1: var(--color-primary-light-2);
+    --donation-pretty-gradient-color-2: var(--color-primary-light-1);
+    color: #fff !important;
+  }
 }
 
 /* Custom Codeberg footer layout */

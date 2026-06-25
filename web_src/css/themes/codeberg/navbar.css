@@ -1,0 +1,47 @@
+/* In Codeberg (2026) themes navbar is same and blue in both light and dark themes */
+/* Note: this file is imported as layer(codeberg-theme) */
+
+#navbar {
+  /* Override normal theme colors */
+  --color-nav-bg: #2185d0;
+  --color-nav-hover-bg: oklch(from var(--color-nav-bg) 0.5 c h);
+  --color-primary: oklch(from var(--color-nav-bg) 0.9 c h);
+  --color-text: #fff;
+
+  /* Codeberg-specific variables */
+  --color-nav-active: oklch(from var(--color-nav-bg) 0.52 c h);
+  --color-contrast-boost: oklch(from var(--color-nav-bg) 0.3 c h);
+
+  /* Override color-active without breaking the variable */
+  .ui.secondary.menu .active.item {
+    background: var(--color-nav-active) !important;
+  }
+
+  /* Boost contrast of white text and icons over blue */
+  text-shadow: 0 0 0.1em var(--color-contrast-boost);
+
+  svg {
+    filter: drop-shadow(var(--color-contrast-boost) 0 0 0.1em);
+  }
+
+  /* Bost contrast of notif. counter - with default contrast isn't good enough */
+  .notification_count {
+    color: oklch(from var(--color-nav-bg) 0.4 c h) !important;
+    text-shadow: none;
+  }
+
+  /* Revert theme overrides for dropdown contents */
+  details.dropdown {
+    --color-text: revert-layer-but-it-works;
+    text-shadow: none;
+
+    .content svg {
+      filter: none;
+    }
+
+    /* Color of icons in dropdown opener */
+    summary {
+      color: #fff;
+    }
+  }
+}
