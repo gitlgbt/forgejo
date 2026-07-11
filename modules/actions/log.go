@@ -163,6 +163,11 @@ func TransferLogs(ctx context.Context, filename string) (func(), error) {
 		}
 		go func() {
 			defer func() {
+				if err := recover(); err != nil {
+					// Recover a panic within the execution of the task.
+					combinedErr := fmt.Errorf("%s\n%s", err, log.Stack(2))
+					log.Error("PANIC whilst running transfer logs: %s Value: %v", filename, combinedErr)
+				}
 				_ = w.CloseWithError(zstdWriter.Close())
 			}()
 			if _, err := io.Copy(zstdWriter, f); err != nil {
