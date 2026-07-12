@@ -432,7 +432,7 @@ func Routes() *web.Route {
 		},
 		gzipMid, sessioner, context.Contexter(), webAuth(buildAuthGroup()),
 		// TODO: GetNotificationCount & GetActiveStopwatch really seem like things that could be folded into Contexter or as helper functions
-		user.GetNotificationCount, repo.GetActiveStopwatch, goGet, smMiddleware)
+		user.GetNotificationCount, repo.GetActiveStopwatch, auth.LoadSwitchAccounts, goGet, smMiddleware)
 	routes.Group("",
 		func() {
 			registerMixedRoutes(routes)
