@@ -1400,7 +1400,6 @@ func handleOAuth2SignIn(ctx *context.Context, source *auth.Source, u *user_model
 	// If this user is enrolled in 2FA and this source doesn't override it,
 	// we can't sign the user in just yet. Instead, redirect them to the 2FA authentication page.
 	if !needs2FA {
-
 		// Track this account in the session's account switcher, preserving any
 		// account that was already signed in (e.g. when adding an account via an
 		// OAuth2 provider). The 2FA path below completes through handleSignInFull,
