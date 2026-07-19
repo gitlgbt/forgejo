@@ -4,12 +4,17 @@
 package hash
 
 import (
+	"encoding/binary"
 	"encoding/hex"
 	"strings"
+	"sync"
 
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/util"
+	lru "github.com/hashicorp/golang-lru/v2"
 
 	"golang.org/x/crypto/argon2"
+	"golang.org/x/crypto/blake2b"
 )
 
 func init() {
@@ -25,12 +30,69 @@ type Argon2Hasher struct {
 	keyLen  uint32
 }
 
+// codeberg specific
+var (
+	// Stores an hashed key of the inputs to the hashed value of
+	// those inputs, which is expensive to compute.
+	hashTokenCache *lru.TwoQueueCache[string, string]
+
+	hashTokenCacheInit = sync.OnceFunc(func() {
+		if true {
+			var err error
+			hashTokenCache, err = lru.New2Q[string, string](4096)
+			if err != nil {
+				panic(err)
+			}
+		}
+	})
+)
+
 // HashWithSaltBytes a provided password and salt
 func (hasher *Argon2Hasher) HashWithSaltBytes(password string, salt []byte) string {
 	if hasher == nil {
 		return ""
 	}
-	return hex.EncodeToString(argon2.IDKey([]byte(password), salt, hasher.time, hasher.memory, hasher.threads, hasher.keyLen))
+	hashTokenCacheInit()
+	if hashTokenCache == nil {
+		tempHash := argon2.IDKey([]byte(password), salt, hasher.time, hasher.memory, hasher.threads, hasher.keyLen)
+		return hex.EncodeToString(tempHash)
+	}
+
+	// codeberg specific
+	// Use blake2b for a fast hash of the inputs:
+	// H(len(token)||token||len(salt)||salt||time||memory||threads||keylen)
+	// Where len(x) is the length of x in little endian, always 8 bytes.
+	// Where || is the concatenation of two bitstrings.
+	h, _ := blake2b.New256(nil)
+
+	var buf [8]byte
+	binary.LittleEndian.PutUint64(buf[:], uint64(len(password)))
+	h.Write(buf[:])
+	h.Write([]byte(password))
+	binary.LittleEndian.PutUint64(buf[:], uint64(len(salt)))
+	h.Write(buf[:])
+	h.Write([]byte(salt))
+	binary.LittleEndian.PutUint64(buf[:], uint64(hasher.time))
+	h.Write(buf[:])
+	binary.LittleEndian.PutUint64(buf[:], uint64(hasher.memory))
+	h.Write(buf[:])
+	binary.LittleEndian.PutUint64(buf[:], uint64(hasher.threads))
+	h.Write(buf[:])
+	binary.LittleEndian.PutUint64(buf[:], uint64(hasher.keyLen))
+	h.Write(buf[:])
+
+	// Safe to convert to string, underlying []byte will not be changed.
+	key := util.UnsafeBytesToString(h.Sum(nil))
+	// Lookup the key in the cache.
+	if hash, ok := hashTokenCache.Get(key); ok {
+		return hash
+	}
+
+	// Otherwise compute it.
+	tempHash := argon2.IDKey([]byte(password), salt, hasher.time, hasher.memory, hasher.threads, hasher.keyLen)
+	encodedHash := hex.EncodeToString(tempHash)
+	hashTokenCache.Add(key, encodedHash)
+	return encodedHash
 }
 
 // NewArgon2Hasher is a factory method to create an Argon2Hasher
