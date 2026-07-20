@@ -50,7 +50,7 @@ var withRunner = connect.WithInterceptors(connect.UnaryInterceptorFunc(func(unar
 			cols = append(cols, "last_online")
 		}
 		if runner.TokenSalt != "" {
-			runner.UpdateSecret(runner.Token)
+			runner.UpdateSecret(token)
 			cols = append(cols, "token_hash", "token_salt")
 		}
 		if methodName == "UpdateTask" || methodName == "UpdateLog" {
