@@ -19,6 +19,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	repo_model "forgejo.org/models/repo"
 	"forgejo.org/modules/analyze"
@@ -430,9 +431,27 @@ func (b *Indexer) Search(ctx context.Context, opts *internal.SearchOptions) (int
 		return 0, nil, nil, err
 	}
 
-	result, err := b.inner.Searcher.Search(ctx, q, &zoekt.SearchOptions{
+	// Bound the search. zoekt ships these caps in SearchOptions.SetDefaults with
+	// the comment "We cap the total number of matches, so overly broad searches
+	// don't crash the machine", but SetDefaults is only called from zoekt's own
+	// commands and never on the search path, so a plain SearchOptions runs with
+	// every limit at zero. Combined with Whole, which returns the full body of
+	// every matching file, one broad query materialises the entire corpus: on a
+	// 2.9k repo instance "error" matched ~44k files and took 10s to render 20.
+	searchOpts := &zoekt.SearchOptions{
 		Whole: true,
-	})
+		// Stop the search itself. These two are zoekt's own defaults.
+		ShardMaxMatchCount: 100000,
+		TotalMaxMatchCount: 1000000,
+		// Hard ceiling on latency whatever the query shape. zoekt's own web
+		// server uses 10s; a page render wants to be well inside that.
+		MaxWallTime: 2 * time.Second,
+		// Truncate after collating, so only this many file bodies are converted
+		// below. Matches the result cap GitHub applies to its code search.
+		MaxDocDisplayCount: 1000,
+	}
+
+	result, err := b.inner.Searcher.Search(ctx, q, searchOpts)
 	if err != nil {
 		return 0, nil, nil, err
 	}
