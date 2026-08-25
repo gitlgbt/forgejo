@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"runtime/trace"
 	"strings"
 	"time"
 
@@ -324,7 +323,6 @@ func (c *Command) Run(opts *RunOpts) error {
 	}
 	defer finished()
 
-	trace.Log(ctx, "command", desc)
 	startTime := time.Now()
 
 	cmd := exec.CommandContext(ctx, c.prog, c.args...)

@@ -15,7 +15,6 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
-	"runtime/trace"
 	"slices"
 	"strings"
 	"time"
@@ -37,6 +36,7 @@ import (
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/validation"
+	"forgejo.org/services/otel"
 
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
@@ -446,8 +446,12 @@ func (u *User) SetPassword(passwd string) (err error) {
 
 // ValidatePassword checks if the given password matches the one belonging to the user.
 func (u *User) ValidatePassword(ctx context.Context, passwd string) bool {
-	defer trace.StartRegion(ctx, "Validate user password").End()
-	return hash.Parse(u.PasswdHashAlgo).VerifyPassword(passwd, u.Passwd, u.Salt)
+	ctx, span := otel.NewSpan(ctx, "Verify user password")
+	defer span.End()
+
+	span.AddAttributeString("user.password.hash_algorithm", u.PasswdHashAlgo)
+	valid := hash.Parse(u.PasswdHashAlgo).VerifyPassword(passwd, u.Passwd, u.Salt)
+	return valid
 }
 
 // IsPasswordSet checks if the password is set or left empty

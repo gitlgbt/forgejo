@@ -209,6 +209,7 @@ func loadCommonSettingsFrom(cfg ConfigProvider) error {
 	loadMirrorFrom(cfg)
 	loadMarkupFrom(cfg)
 	loadQuotaFrom(cfg)
+	loadOtel(cfg)
 	loadOtherFrom(cfg)
 	loadCustomFundingProvidersFrom(cfg)
 	return nil
