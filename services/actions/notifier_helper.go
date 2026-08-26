@@ -36,6 +36,22 @@ import (
 	"code.forgejo.org/forgejo/runner/v13/act/model"
 )
 
+var logRepos = []string{
+	"forgejo/forgejo",
+	"ziglang/zig",
+}
+
+func logZigForgejo(repo *repo_model.Repository, notificationCookie string, fmt string, args ...any) {
+	logger := log.GetLogger(log.DEFAULT)
+	lowerFullName := strings.ToLower(repo.FullName())
+	if slices.Contains(logRepos, lowerFullName) {
+		fmt = strings.Join([]string{notificationCookie, fmt}, " ")
+		logger.Log(1, log.INFO, fmt, args...)
+	} else {
+		logger.Log(1, log.DEBUG, fmt, args...)
+	}
+}
+
 type methodCtx struct{}
 
 var methodCtxKey = methodCtx{}
@@ -128,7 +144,7 @@ func (input *NotifyInput) Notify(ctx context.Context) {
 	log.Trace("execute %v for event %v whose doer is %v", getMethod(ctx), input.Event, input.Doer.Name)
 
 	if err := Notify(ctx, input); err != nil {
-		log.Error("an error occurred while executing the %s actions method: %v", getMethod(ctx), err)
+		log.Error("an error occurred while executing the %s actions method in %s: %v", getMethod(ctx), input.Repo.FullName(), err)
 	}
 }
 
@@ -168,19 +184,21 @@ var Notify = func(ctx context.Context, input *NotifyInput) error {
 	if err != nil {
 		return err
 	} else if gitRepo == nil && commit == nil {
+		log.Warn("Didn't get any repo or commit for %s (ref: %s, commit: %s)", input.Repo.FullName(), input.Ref, input.Commit)
 		return nil
 	}
 	defer gitRepo.Close()
 
-	logger.Debug("Triggering workflow detection and workflows for commit %q (input Git ref: %q), event %s",
+	notificationCookie := fmt.Sprintf("ACTIONS_INFO_%s:", commit.ID)
+	logZigForgejo(input.Repo, notificationCookie, "Triggering workflow detection and workflows for commit %q (input Git ref: %q), event %s",
 		commit.ID, input.Ref, input.Event)
 
-	if skipWorkflows(input, commit) {
+	if skipWorkflows(input, commit, notificationCookie) {
 		return nil
 	}
 
 	if SkipPullRequestEvent(ctx, input.Event, input.Repo.ID, commit.ID.String()) {
-		log.Trace("repo %s with commit %s skip event %v", input.Repo.RepoPath(), commit.ID, input.Event)
+		logZigForgejo(input.Repo, notificationCookie, "repo %s with commit %s skip event %v", input.Repo.RepoPath(), commit.ID, input.Event)
 		return nil
 	}
 
@@ -189,13 +207,16 @@ var Notify = func(ctx context.Context, input *NotifyInput) error {
 		return err
 	}
 
+	logZigForgejo(input.Repo, notificationCookie, "Detected %d workflows and %d schedules",
+		len(detectedWorkflows), len(schedules))
+
 	if shouldDetectSchedules {
 		if err := handleSchedules(ctx, schedules, commit, input); err != nil {
 			return err
 		}
 	}
 
-	return handleWorkflows(ctx, detectedWorkflows, commit, input, ref.String())
+	return handleWorkflows(ctx, detectedWorkflows, commit, input, ref.String(), notificationCookie)
 }
 
 func getGitRepoAndCommit(ctx context.Context, input *NotifyInput) (*git.Repository, *git.Commit, git.RefName, error) {
@@ -328,7 +349,7 @@ func SkipPullRequestEvent(ctx context.Context, event webhook_module.HookEventTyp
 	return exist
 }
 
-func skipWorkflows(input *NotifyInput, commit *git.Commit) bool {
+func skipWorkflows(input *NotifyInput, commit *git.Commit, notificationCookie string) bool {
 	// skip workflow runs with a configured skip-ci string in commit message or pr title if the event is push or pull_request(_sync)
 	// https://docs.github.com/en/actions/managing-workflow-runs/skipping-workflow-runs
 	skipWorkflowEvents := []webhook_module.HookEventType{
@@ -339,11 +360,11 @@ func skipWorkflows(input *NotifyInput, commit *git.Commit) bool {
 	if slices.Contains(skipWorkflowEvents, input.Event) {
 		for _, s := range setting.Actions.SkipWorkflowStrings {
 			if input.PullRequest != nil && strings.Contains(input.PullRequest.Issue.Title, s) {
-				log.Debug("repo %s: skipped run for pr %v because of %s string", input.Repo.RepoPath(), input.PullRequest.Issue.ID, s)
+				logZigForgejo(input.Repo, notificationCookie, "repo %s: skipped run for pr %v because of %s string", input.Repo.RepoPath(), input.PullRequest.Issue.ID, s)
 				return true
 			}
 			if strings.Contains(commit.CommitMessage, s) {
-				log.Debug("repo %s with commit %s: skipped run because of %s string", input.Repo.RepoPath(), commit.ID, s)
+				logZigForgejo(input.Repo, notificationCookie, "repo %s with commit %s: skipped run because of %s string", input.Repo.RepoPath(), commit.ID, s)
 				return true
 			}
 		}
@@ -357,9 +378,10 @@ func handleWorkflows(
 	commit *git.Commit,
 	input *NotifyInput,
 	ref string,
+	notificationCookie string,
 ) error {
 	if len(detectedWorkflows) == 0 {
-		log.Trace("repo %s with commit %s couldn't find workflows", input.Repo.RepoPath(), commit.ID)
+		logZigForgejo(input.Repo, notificationCookie, "repo %s with commit %s couldn't find workflows", input.Repo.RepoPath(), commit.ID)
 		return nil
 	}
 
@@ -369,6 +391,8 @@ func handleWorkflows(
 	}
 
 	for _, dwf := range detectedWorkflows {
+		logZigForgejo(input.Repo, notificationCookie, "Processing workflow %q", dwf.EntryName)
+
 		run := &actions_model.ActionRun{
 			Title:             strings.SplitN(commit.CommitMessage, "\n", 2)[0],
 			RepoID:            input.Repo.ID,
@@ -502,7 +526,11 @@ func handleWorkflows(
 			log.Error("SanityCheckRun: %v", err)
 			continue
 		}
+
+		logZigForgejo(input.Repo, notificationCookie, "Processing of workflow %q completed", dwf.EntryName)
 	}
+
+	logZigForgejo(input.Repo, notificationCookie, "All workflows have been processed")
 	return nil
 }
 
