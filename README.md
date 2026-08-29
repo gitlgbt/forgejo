@@ -1,7 +1,9 @@
 # gitgay/forgejo
 
 This is git.gay's fork of Forgejo, used for small UI tweaks and such.
-Use by others than git.gay itself is not supported, use at your own risk!
+Use by others than git.gay itself is not really a goal for us, but
+you are free to use at your own risk! Get in touch with [Hazel](https://hazy.gay)
+if you are doing this and would like any extra help :)
 
 ---
 
