@@ -1,0 +1,2 @@
+@import "theme-codeberg-light-tritanopia.css" (prefers-color-scheme: light);
+@import "theme-codeberg-dark-tritanopia.css" (prefers-color-scheme: dark);
