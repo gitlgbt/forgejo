@@ -1,0 +1,2 @@
+@import "theme-gitdotlgbt-light.css";
+@import "theme-gitdotlgbt-dark.css" (prefers-color-scheme: dark);

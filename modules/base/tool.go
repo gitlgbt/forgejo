@@ -99,6 +99,38 @@ func Int64sToStrings(ints []int64) []string {
 	return strs
 }
 
+// add file icon because why not?
+
+// filename
+var fileNameIcons = map[string]string{
+	".gitignore":          "file",
+	".gitattributes":      "file",
+	".dockerignore":       "file",
+	"dockerfile":          "file-code",
+	"docker-compose.yml":  "file-code",
+	"docker-compose.yaml": "file-code",
+	"readme":              "info",
+	"readme.md":           "info",
+	"readme.txt":          "info",
+	"license":             "law",
+	"license.md":          "law",
+	"package.json":        "package",
+	"makefile":            "terminal",
+}
+
+// file extension
+var fileExtIcons = map[string]string{
+	".png":  "image",
+	".jpg":  "image",
+	".jpeg": "image",
+	".gif":  "image",
+	".webp": "image",
+	".bmp":  "image",
+	".ico":  "image",
+	".svg":  "image",
+	".avif": "image",
+}
+
 // EntryIcon returns the octicon class for displaying files/directories
 func EntryIcon(entry *git.TreeEntry) string {
 	switch {
@@ -116,6 +148,15 @@ func EntryIcon(entry *git.TreeEntry) string {
 		return "file-directory-fill"
 	case entry.IsSubmodule():
 		return "file-submodule"
+	}
+
+	// custom file icon (incase i forgot where it was )
+	if icon, ok := fileNameIcons[strings.ToLower(entry.Name())]; ok {
+		return icon
+	}
+
+	if icon, ok := fileExtIcons[strings.ToLower(filepath.Ext(entry.Name()))]; ok {
+		return icon
 	}
 
 	if IsCitationFile(entry) {
