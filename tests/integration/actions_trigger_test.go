@@ -1283,17 +1283,18 @@ func TestActionsWorkflowDispatchDynamicMatrix(t *testing.T) {
 			Name:      "repo-workflow-dispatch",
 			LatestSha: &sha,
 			Files: forgery.MapFS{
-				".forgejo/workflows/dispatch.yml": forgery.MapFile(
-					"name: test\n" +
-						"on: [workflow_dispatch]\n" +
-						"jobs:\n" +
-						"  test:\n" +
-						"    runs-on: ubuntu-latest\n" +
-						"    strategy:\n" +
-						"      matrix: \n" +
-						"        dim1: \"${{ fromJSON(needs.other-job.outputs.some-output) }}\"\n" +
-						"    steps:\n" +
-						"      - run: echo helloworld\n",
+				".forgejo/workflows/dispatch.yml": forgery.MapFile(`
+name: test
+on: [workflow_dispatch]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dim1: "${{ fromJSON(needs.other-job.outputs.some-output) }}"
+    steps:
+      - run: echo helloworld
+`,
 				),
 			},
 		})
@@ -1332,23 +1333,24 @@ func TestActionsWorkflowDispatchDynamicMatrixBooleanInput(t *testing.T) {
 			Name:      "repo-workflow-dispatch",
 			LatestSha: &sha,
 			Files: forgery.MapFS{
-				".forgejo/workflows/dispatch.yml": forgery.MapFile(
-					"name: test\n" +
-						"on:\n" +
-						"  workflow_dispatch:\n" +
-						"    inputs:\n" +
-						"      win32:\n" +
-						"        description: 'Boolean'\n" +
-						"        required: false\n" +
-						"        type: boolean\n" +
-						"jobs:\n" +
-						"  test:\n" +
-						"    runs-on: ubuntu-latest\n" +
-						"    strategy:\n" +
-						"      matrix:\n" +
-						"        runner: ${{ fromJSON(inputs.win32 && '[\"win32\", \"win64\"]' || '[\"win64\"]') }}\n" +
-						"    steps:\n" +
-						"      - run: echo helloworld\n",
+				".forgejo/workflows/dispatch.yml": forgery.MapFile(`
+name: test
+on:
+  workflow_dispatch:
+    inputs:
+      win32:
+        description: 'Boolean'
+        required: false
+        type: boolean
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runner: ${{ fromJSON(inputs.win32 && '["win32", "win64"]' || '["win64"]') }}
+    steps:
+      - run: echo helloworld
+`,
 				),
 			},
 		})
@@ -1494,6 +1496,82 @@ func TestActionsWorkflowDispatchConcurrencyGroup(t *testing.T) {
 		assert.Equal(t, actions_model.CancelInProgress, secondRun.ConcurrencyType)
 		firstRunReload := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{ID: firstRun.ID})
 		assert.Equal(t, actions_model.StatusCancelled, firstRunReload.Status)
+	})
+}
+
+// When a workflow dispatch has an incomplete job that needs to be evaluated based upon the output from another job,
+// ensure that it is still able to access a boolean workflow dispatch input correctly.
+func TestActionsWorkflowDispatchIncompleteJobBooleanInput(t *testing.T) {
+	if !setting.Database.Type.IsSQLite3() {
+		// mockRunner only supported with sqlite
+		t.Skip()
+	}
+
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+		// create the repo
+		var sha string
+		repo := forgery.CreateRepository(t, user2, &forgery.CreateRepositoryOptions{
+			Name:      "repo-workflow-dispatch",
+			LatestSha: &sha,
+			Files: forgery.MapFS{
+				".forgejo/workflows/dispatch.yml": forgery.MapFile(`
+name: test
+on:
+  workflow_dispatch:
+    inputs:
+      win32:
+        description: 'Boolean'
+        type: boolean
+jobs:
+  pre-req:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo helloworld # theoretically we provide an output from this job, but it is mocked
+  target-job:
+    needs: pre-req
+    runs-on: ${{ needs.pre-req.outputs.runs-on }} # makes this job incomplete until pre-req is complete
+    if: ${{ inputs.win32 }} # we'll provide a 'false' bool here so this job is skipped
+    steps:
+      - run: echo helloworld
+`,
+				),
+			},
+		})
+		forgery.EnableRepoUnit(t, repo, unit_model.TypeActions, nil)
+
+		gitRepo, err := gitrepo.OpenRepository(db.DefaultContext, repo)
+		require.NoError(t, err)
+		defer gitRepo.Close()
+
+		workflow, err := actions_service.GetWorkflowFromCommit(gitRepo, "main", "dispatch.yml")
+		require.NoError(t, err)
+
+		inputGetter := func(key string) string {
+			return "false" // the string false is interpreted as a boolean false because `type: boolean` on the input
+		}
+		run, _, err := workflow.Dispatch(db.DefaultContext, inputGetter, repo, user2)
+		require.NoError(t, err)
+
+		runner := newMockRunner()
+		runner.registerAsRepoRunner(t, user2.Name, repo.Name, "mock-runner", []string{"ubuntu-latest"})
+
+		preReqTask := runner.fetchTask(t)
+		unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{TaskID: preReqTask.GetId()})
+		runner.execTask(t, preReqTask, &mockTaskOutcome{
+			result:  runnerv1.Result_RESULT_SUCCESS,
+			outputs: map[string]string{"runs-on": "ubunut-latest"},
+		})
+
+		// The input "false" should be considered the boolean value false and prevent the target-job from becoming
+		// available to run.  It should instead become skipped:
+		assert.Nil(t, runner.maybeFetchTask(t))
+		targetJob := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRunJob{
+			RunID: run.ID,
+			Name:  "target-job",
+		})
+		assert.Equal(t, actions_model.StatusSkipped.String(), targetJob.Status.String())
 	})
 }
 
@@ -2023,12 +2101,6 @@ func TestActionsForkPullRequest(t *testing.T) {
 		// Workflow defined in the PR base branch will be run, which is trusted code.  Therefore it will not require
 		// approval, and will be provided secrets.
 		runFromBase
-		// Workflow defined in the PR base branch will be run, which is trusted code.  Therefore it will not require
-		// approval, and will be provided secrets... but... due to a current implementation bug, some of these cases do
-		// not provide secrets, since they're marked as a pull request from a forked repo.  (This bug is outside the
-		// scope of the security fix currently being authored, and so it is documented & tested here, but should be
-		// remediated and changed to runFromBase).
-		runFromBaseWithBuggySecrets
 		// Workflow will be run without recognition that it is a pull request; for example when making a comment on a PR
 		// and triggering the issue_comment event.
 		runFromBaseWithoutPullRequest
@@ -2051,43 +2123,43 @@ func TestActionsForkPullRequest(t *testing.T) {
 			name:             "pull_request-assigned",
 			workflowPreamble: "on: { pull_request: { types: [assigned] } }\n",
 			triggerEvent:     assignPR,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-unassigned",
 			workflowPreamble: "on: { pull_request: { types: [unassigned] } }\n",
 			triggerEvent:     unassignPR,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-labeled",
 			workflowPreamble: "on: { pull_request: { types: [labeled] } }\n",
 			triggerEvent:     labelPR,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-unlabeled",
 			workflowPreamble: "on: { pull_request: { types: [unlabeled] } }\n",
 			triggerEvent:     unlabelPR,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-edited",
 			workflowPreamble: "on: { pull_request: { types: [edited] } }\n",
 			triggerEvent:     editPRTitle,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-closed",
 			workflowPreamble: "on: { pull_request: { types: [closed] } }\n",
 			triggerEvent:     closePR,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-reopened",
 			workflowPreamble: "on: { pull_request: { types: [reopened] } }\n",
 			triggerEvent:     reopenPR,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-synchronize",
@@ -2099,25 +2171,25 @@ func TestActionsForkPullRequest(t *testing.T) {
 			name:             "pull_request-milestoned",
 			workflowPreamble: "on: { pull_request: { types: [milestoned] } }\n",
 			triggerEvent:     milestonePR,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-demilestoned",
 			workflowPreamble: "on: { pull_request: { types: [demilestoned] } }\n",
 			triggerEvent:     demilestonePR,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-review_requested",
 			workflowPreamble: "on: { pull_request: { types: [review_requested] } }\n",
 			triggerEvent:     requestReview,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request-review_request_removed",
 			workflowPreamble: "on: { pull_request: { types: [review_request_removed] } }\n",
 			triggerEvent:     removeReviewRequest,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request_target-assigned",
@@ -2195,25 +2267,25 @@ func TestActionsForkPullRequest(t *testing.T) {
 			name:             "pull_request_review",
 			workflowPreamble: "on: { pull_request_review: { } }",
 			triggerEvent:     createPRReview,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request_review-submitted",
 			workflowPreamble: "on: { pull_request_review: { types: [submitted] } }",
 			triggerEvent:     createPRReview,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request_review-edited",
 			workflowPreamble: "on: { pull_request_review: { types: [edited] } }",
 			triggerEvent:     createPRReview, // no API provided for editing, but editing & submitting are treated the same internally
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "pull_request_review_comment-created",
 			workflowPreamble: "on: { pull_request_review_comment: { types: [created] } }",
 			triggerEvent:     createPRReviewComment,
-			expectedResult:   runFromBaseWithBuggySecrets,
+			expectedResult:   runFromBase,
 		},
 		{
 			name:             "issue_comment-created",
@@ -2331,7 +2403,7 @@ jobs:
 					assert.True(t, actionRun.IsForkPullRequest, "run must be marked as IsForkPullRequest")
 					assert.True(t, actionRun.NeedApproval, "run must be marked as NeedApproval")
 					require.NoError(t, actions_service.UpdateTrustedWithPullRequest(t.Context(), user2.ID, pullRequest, actions_service.UserTrustedOnce))
-				case runFromBase, runFromBaseWithBuggySecrets:
+				case runFromBase:
 					actionRun := unittest.AssertExistsAndLoadBean(t, &actions_model.ActionRun{RepoID: baseRepo.ID})
 					assert.True(t, actionRun.IsForkPullRequest, "run must be !IsForkPullRequest")
 					assert.False(t, actionRun.NeedApproval, "run must be !NeedApproval")
@@ -2361,14 +2433,6 @@ jobs:
 					assert.Contains(t, string(task.GetWorkflowPayload()), "job-base:") // running the workflow from the base branch, not the fork, which is why it can be trusted
 					assert.Contains(t, task.Secrets, "MY_SECRET")
 					assert.Len(t, task.Secrets, 4)
-					// runFromBase... SHOULD give us a token that has write permissions to the repo's units, and which
-					// would return http.StatusOK to this request, but it doesn't.  Every one of these cases ends up
-					// marked as `IsForkPullRequest` (which is technically correct), and then the token only gets
-					// read-only permissions (which is a surprise).  This is a bug; StatusCreated is correct:
-					writeToRepoCode(t, baseRepo, task.Secrets["FORGEJO_TOKEN"], http.StatusForbidden)
-				case runFromBaseWithBuggySecrets:
-					assert.Contains(t, string(task.GetWorkflowPayload()), "job-base:") // running the workflow from the base branch, not the fork, which is why it can be trusted
-					assert.Len(t, task.Secrets, 3)                                     // runFromBaseWithBuggySecrets should be eliminated and act like runFromBase, because it's trusted, but has no repo secrets
 					// runFromBase... SHOULD give us a token that has write permissions to the repo's units, and which
 					// would return http.StatusOK to this request, but it doesn't.  Every one of these cases ends up
 					// marked as `IsForkPullRequest` (which is technically correct), and then the token only gets
