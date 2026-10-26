@@ -1,0 +1,76 @@
+/* Copyright 2026 The Codefloe Authors. All rights reserved.
+ * Copyright 2026 The Fryrvo and Gitlgbt Authors. All rights reserved.
+ * SPDX-License-Identifier: GPL-3.0-or-later */
+
+.gitlgbt-announcement {
+  --announcement-background: color-mix(in srgb, var(--color-primary) 8%, var(--color-body));
+  --announcement-border: color-mix(in srgb, var(--color-primary) 24%, var(--color-body));
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px max(16px, calc((100% - 1280px) / 2));
+  color: var(--color-text);
+  background: var(--announcement-background);
+  border-bottom: 1px solid var(--announcement-border);
+}
+
+.gitlgbt-announcement > .svg {
+  flex: 0 0 auto;
+  color: var(--color-primary);
+}
+
+.gitlgbt-announcement-content {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.gitlgbt-announcement-content a {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.gitlgbt-announcement-dismiss {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--color-text);
+  background: transparent;
+  cursor: pointer;
+}
+
+.gitlgbt-announcement-dismiss[hidden] {
+  display: none;
+}
+
+.gitlgbt-announcement-dismiss:hover {
+  background: var(--color-hover);
+}
+
+.gitlgbt-announcement :focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.gitlgbt-announcement-message {
+  font-size: inherit;
+}
+
+.gitlgbt-announcement-message:has(> p:only-child),
+.gitlgbt-announcement-message > p:only-child {
+  display: inline;
+}
+
+.gitlgbt-announcement-editor {
+  margin-top: 8px;
+}

@@ -1,0 +1,31 @@
+{{template "admin/layout_head" (dict "ctxData" . "pageClass" "admin announcements")}}
+<div class="admin-setting-content">
+	<h4 class="ui top attached header">{{ctx.Locale.Tr "admin.announcements"}}</h4>
+	<div class="ui attached segment">
+		<p>{{ctx.Locale.Tr "admin.announcements.description"}}</p>
+		<p>{{ctx.Locale.Tr "admin.announcements.schedule_help"}}</p>
+		{{range .AnnouncementEntries}}
+			<details class="ui segment" {{if .HasError}}open{{end}}>
+				<summary>{{ctx.Locale.Tr (printf "admin.announcements.status_%s" .Announcement.Status)}}: {{.Announcement.Message}}</summary>
+				{{template "admin/gitlgbt_announcement_form" (dict "ctxData" $ "Form" .Form "HasError" .HasError)}}
+				<form id="delete-announcement-{{.Announcement.ID}}" method="post" class="tw-mt-3">
+					{{$.CsrfTokenHtml}}
+					<input type="hidden" name="version" value="{{$.AnnouncementVersion}}">
+					<input type="hidden" name="id" value="{{.Announcement.ID}}">
+					<input type="hidden" name="action" value="delete">
+					<button type="button" class="ui red basic button delete-button" data-type="form" data-form="#delete-announcement-{{.Announcement.ID}}" data-modal-id="delete-announcement-modal">{{ctx.Locale.Tr "admin.announcements.delete"}}</button>
+				</form>
+			</details>
+		{{else}}
+			<p>{{ctx.Locale.Tr "admin.announcements.empty"}}</p>
+		{{end}}
+		<h4>{{ctx.Locale.Tr "admin.announcements.add"}}</h4>
+		{{template "admin/gitlgbt_announcement_form" (dict "ctxData" . "Form" .NewAnnouncementForm "HasError" .NewAnnouncementHasError)}}
+	</div>
+</div>
+<div class="ui g-modal-confirm delete modal" id="delete-announcement-modal">
+	<div class="header">{{ctx.Locale.Tr "admin.announcements.delete"}}</div>
+	<div class="content"><p>{{ctx.Locale.Tr "admin.announcements.delete_confirm"}}</p></div>
+	{{template "base/modal_actions_confirm" (dict "ModalButtonTypes" "confirm")}}
+</div>
+{{template "admin/layout_footer" .}}

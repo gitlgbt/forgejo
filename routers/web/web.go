@@ -994,6 +994,9 @@ func registerRoutes(m *web.Route) {
 			})
 		}, oauth2Enabled)
 
+		m.Post("/announcements/preview", web.Bind(structs.MarkupOption{}), misc.Markup)
+		m.Combo("/announcements").Get(admin.Announcements).Post(web.Bind(forms.AdminAnnouncementForm{}), admin.AnnouncementsPost)
+
 		m.Group("/actions", func() {
 			m.Get("", admin.RedirectToDefaultSetting)
 			addSettingsRunnersRoutes()

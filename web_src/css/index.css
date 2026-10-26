@@ -90,5 +90,6 @@
 @import "./migrate.css";
 @import "./issues.css";
 
+@import "./gitlgbt/index.css";
 @import "./helpers.css";
 @tailwind utilities;

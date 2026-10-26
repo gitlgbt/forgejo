@@ -1,0 +1,35 @@
+		<form class="ui form" method="post">
+			{{.ctxData.CsrfTokenHtml}}
+			<input type="hidden" name="version" value="{{.ctxData.AnnouncementVersion}}">
+			<input type="hidden" name="id" value="{{.Form.ID}}">
+			<div class="field">
+				<div class="ui checkbox">
+					<input id="announcement-{{.Form.ID}}-enabled" name="enabled" type="checkbox" {{if .Form.Enabled}}checked{{end}}>
+					<label for="announcement-{{.Form.ID}}-enabled">{{ctx.Locale.Tr "admin.announcements.enabled"}}</label>
+				</div>
+			</div>
+			<div class="field {{if and .HasError .ctxData.Err_Message}}error{{end}}">
+				<label>{{ctx.Locale.Tr "admin.announcements.message"}}</label>
+				{{template "shared/combomarkdowneditor" (dict
+					"ContainerClasses" "gitlgbt-announcement-editor"
+					"MarkdownPreviewUrl" (print AppSubUrl "/admin/announcements/preview")
+					"MarkdownPreviewContext" (print AppSubUrl "/")
+					"TextareaName" "message"
+					"TextareaContent" .Form.Message
+					"TextareaAriaLabel" (ctx.Locale.Tr "admin.announcements.message")
+				)}}
+				<p class="help">{{ctx.Locale.Tr "admin.announcements.markdown_help"}}</p>
+			</div>
+			<div class="two fields">
+				<div class="field {{if and .HasError .ctxData.Err_StartsAt}}error{{end}}">
+					<label for="announcement-{{.Form.ID}}-start">{{ctx.Locale.Tr "admin.announcements.starts_at"}}</label>
+					<input id="announcement-{{.Form.ID}}-start" name="starts_at" type="datetime-local" value="{{.Form.StartsAt}}">
+				</div>
+				<div class="field {{if and .HasError .ctxData.Err_EndsAt}}error{{end}}">
+					<label for="announcement-{{.Form.ID}}-end">{{ctx.Locale.Tr "admin.announcements.ends_at"}}</label>
+					<input id="announcement-{{.Form.ID}}-end" name="ends_at" type="datetime-local" value="{{.Form.EndsAt}}">
+				</div>
+			</div>
+			<p class="help">{{ctx.Locale.Tr "admin.announcements.help"}}</p>
+			<button class="ui primary button" type="submit">{{ctx.Locale.Tr "admin.announcements.save"}}</button>
+		</form>

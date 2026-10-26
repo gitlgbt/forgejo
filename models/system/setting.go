@@ -5,6 +5,7 @@ package system
 
 import (
 	"context"
+	"errors"
 	"math"
 	"sync"
 	"time"
@@ -75,27 +76,62 @@ func GetAllSettings(ctx context.Context) (revision int, res map[string]string, e
 	return revision, res, nil
 }
 
+// bumpSettingsRevision also serializes setting writers on the shared revision row.
+// Call only within a transaction, after preparing the row with GetRevision.
+func bumpSettingsRevision(ctx context.Context) error {
+	_, err := db.Exec(ctx, "UPDATE system_setting SET version=version+1 WHERE setting_key=?", keyRevision)
+	return err
+}
+
+func upsertSetting(ctx context.Context, key, value string) error {
+	res, err := db.Exec(ctx, "UPDATE system_setting SET version=version+1, setting_value=? WHERE setting_key=?", value, key)
+	if err != nil {
+		return err
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return db.Insert(ctx, &Setting{SettingKey: key, SettingValue: value})
+	}
+	return nil
+}
+
 func SetSettings(ctx context.Context, settings map[string]string) error {
-	_ = GetRevision(ctx) // prepare the "revision" key ahead
+	_ = GetRevision(ctx)
 	return db.WithTx(ctx, func(ctx context.Context) error {
-		e := db.GetEngine(ctx)
-		_, err := db.Exec(ctx, "UPDATE system_setting SET version=version+1 WHERE setting_key=?", keyRevision)
-		if err != nil {
+		if err := bumpSettingsRevision(ctx); err != nil {
 			return err
 		}
-		for k, v := range settings {
-			res, err := e.Exec("UPDATE system_setting SET version=version+1, setting_value=? WHERE setting_key=?", v, k)
-			if err != nil {
+		for key, value := range settings {
+			if err := upsertSetting(ctx, key, value); err != nil {
 				return err
-			}
-			rows, _ := res.RowsAffected()
-			if rows == 0 { // if no existing row, insert a new row
-				if _, err = e.Insert(&Setting{SettingKey: k, SettingValue: v}); err != nil {
-					return err
-				}
 			}
 		}
 		return nil
+	})
+}
+
+var ErrSettingChanged = errors.New("setting changed since the form was opened")
+
+// SetSettingIfVersion writes a setting only if its version still matches.
+// A version of -1 means the setting must not yet exist.
+func SetSettingIfVersion(ctx context.Context, key string, version int, value string) error {
+	_ = GetRevision(ctx)
+	return db.WithTx(ctx, func(ctx context.Context) error {
+		// Taking the revision write lock before reading also serializes concurrent first saves.
+		if err := bumpSettingsRevision(ctx); err != nil {
+			return err
+		}
+		row, exists, err := db.Get[Setting](ctx, builder.Eq{"setting_key": key})
+		if err != nil {
+			return err
+		}
+		if (!exists && version != -1) || (exists && row.Version != version) {
+			return ErrSettingChanged
+		}
+		return upsertSetting(ctx, key, value)
 	})
 }
 

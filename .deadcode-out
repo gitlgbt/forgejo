@@ -283,6 +283,7 @@ forgejo.org/services/notify
 	UnregisterNotifier
 
 forgejo.org/services/repository
+	DeleteCollaboration
 	IsErrForkAlreadyExist
 
 forgejo.org/services/repository/files

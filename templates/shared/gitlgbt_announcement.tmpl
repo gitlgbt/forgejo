@@ -1,0 +1,9 @@
+{{range (.SystemConfig.Announcement.Value ctx).Active}}
+	<aside class="gitlgbt-announcement" data-announcement-id="{{.ID}}" aria-label="{{ctx.Locale.Tr "announcement.label"}}">
+		{{svg "octicon-megaphone" 18}}
+		<div class="gitlgbt-announcement-content">
+			<div class="markup gitlgbt-announcement-message">{{RenderAnnouncement ctx .ID .Message}}</div>
+		</div>
+		<button type="button" class="gitlgbt-announcement-dismiss" aria-label="{{ctx.Locale.Tr "announcement.dismiss"}}" hidden>{{svg "octicon-x" 16}}</button>
+	</aside>
+{{end}}

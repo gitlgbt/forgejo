@@ -77,7 +77,10 @@ func DeclareGitRepos(t *testing.T) {
 			Versions:  []string{""},
 			CommitMsg: "Another commit which mentions @user1 in the title\nand @user2 in the text",
 		},
-	}, nil)
+	}, func(user *user_model.User, repo *repo_model.Repository) {
+		// The live notification test needs issue notifications regardless of the default watch events.
+		require.NoError(t, repo_model.WatchRepoWithEvents(db.DefaultContext, user.ID, repo.ID, repo_model.WatchEventIssues))
+	})
 	newRepo(t, 2, "file-uploads", nil, []FileChanges{{
 		Filename: "UPLOAD_TEST.md",
 		Versions: []string{"# File upload test\nUse this repo to test various file upload features in new branches."},

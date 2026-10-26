@@ -4,6 +4,7 @@
 package system_test
 
 import (
+	"sync"
 	"testing"
 
 	"forgejo.org/models/db"
@@ -49,4 +50,38 @@ func TestSettings(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, settings, 2)
 	assert.Equal(t, 4, rev)
+}
+
+func TestSetSettingIfVersion(t *testing.T) {
+	require.NoError(t, unittest.PrepareTestDatabase())
+	ctx := db.DefaultContext
+	_ = system.GetRevision(ctx)
+	start := make(chan struct{})
+	results := make(chan error, 2)
+	var workers sync.WaitGroup
+	for range 2 {
+		workers.Go(func() {
+			<-start
+			results <- system.SetSettingIfVersion(ctx, "test.concurrent-announcement", -1, "first")
+		})
+	}
+	close(start)
+	workers.Wait()
+	close(results)
+	successes, conflicts := 0, 0
+	for err := range results {
+		if err == nil {
+			successes++
+		} else {
+			require.ErrorIs(t, err, system.ErrSettingChanged)
+			conflicts++
+		}
+	}
+	assert.Equal(t, 1, successes)
+	assert.Equal(t, 1, conflicts)
+	before := system.GetRevision(ctx)
+	require.ErrorIs(t, system.SetSettingIfVersion(ctx, "test.concurrent-announcement", -1, "lost"), system.ErrSettingChanged)
+	assert.Equal(t, before, system.GetRevision(ctx), "failed comparisons must roll back the revision bump")
+	require.NoError(t, system.SetSettingIfVersion(ctx, "test.concurrent-announcement", 0, "second"))
+	require.ErrorIs(t, system.SetSettingIfVersion(ctx, "test.concurrent-announcement", 0, "lost"), system.ErrSettingChanged)
 }

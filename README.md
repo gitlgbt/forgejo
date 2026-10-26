@@ -4,31 +4,37 @@
   <p><strong>Source code for <a href="https://git.lgbt">git.lgbt</a></strong></p>
 </div>
 
-gitlgbt/forgejo is a customized fork of [Forgejo](https://forgejo.org)
+## gitlgbt/forgejo
+
+gitlgbt/forgejo is a customized version of [Forgejo](https://forgejo.org) made for git.lgbt
 <br>
-building upon modifications from [gitgay/forgejo](https://git.gay/gitgay/forgejo) be sure to check them out they have cool instance
----
+building upon modifications from [many project](#copyright--attribution) be sure to check them out
 
-### Copyright & Licenses
+run and test locally
 
-- Copyright (C) 2026 git.lgbt Authors and contributors
+```bash
+make clean
+TAGS='sqlite sqlite_unlock_notify' make watch
+```
+
+page will up at [http://127.0.0.1:3000/](http://127.0.0.1:3000/)
+<br>
+you will meet with install page for the database choose SQLite3 (if it is not the default already)
+you can create admin account and start doing whatever you want to
+
+
+### Copyright & Attribution
+
+- Copyright (C) 2026 git.lgbt Authors and contributors All rights reserved.
 - Copyright (C) The git.gay Authors and contributors
+- Copyright (C) 2026 The Codefloe Authors
 - Copyright (C) The Forgejo Authors
 - Copyright (C) The Gitea Authors
 - Copyright (C) The Gogs Authors
 
 ---
-
-### Learn More About Forgejo
-
-Dive into the [Forgejo Documentation](https://forgejo.org/docs/latest/), subscribe to releases and blog posts on the [official website](https://forgejo.org), <a href="https://floss.social/@forgejo" rel="me">find Forgejo on the Fediverse</a>, or hop into the [Forgejo Matrix Room](https://matrix.to/#/#forgejo-chat:matrix.org) if you have any questions or want to get involved.
-
-* **License:** Forgejo is distributed under the terms of the [GPL version 3.0](LICENSE) or any later version. The agreement for this license [was documented in June 2023](https://codeberg.org/forgejo/governance/pulls/24) and implemented during the development of Forgejo v9.0. All Forgejo versions before v9.0 are distributed under the MIT license.
-* **Get Involved:** If you are interested in making Forgejo better, either by reporting a bug or by helping improve governance, please [take a look at the contribution guide](CONTRIBUTING.md).
-
----
 <br>
 <div align="center">
-  <img src="./assets/Fryrvo pride.svg" alt="Fryrvo Pride Logo" width="70" />
+  <img src="https://raw.githubusercontent.com/gitlgbt/forgejo/refs/heads/main/assets/Fryrvo%20pride.svg" alt="Fryrvo Pride Logo" width="70" />
   <p><em>Currently Hosted at Fryrvo</em></p>
 </div>
