@@ -93,11 +93,6 @@ import {initRepoMilestoneEditor} from './features/repo-milestone.js';
 import {initModalClose} from './modules/modal.ts';
 import {initAuthorizedIntegrationClaimRuleEditor} from './features/authorized-integration.js';
 import './gitlgbt/index.js';
-import {
-  initModalServiceMessageForm,
-  initPreviewServiceMessageButton,
-  initDeleteServiceMessageButton,
-} from './features/service-message.ts';
 
 // Init Gitea's Fomantic settings
 initGiteaFomantic();

@@ -104,41 +104,9 @@ func DeclareGitRepos(t *testing.T) {
 			Versions:  []string{""},
 			CommitMsg: "Another commit which mentions @user1 in the title\nand @user2 in the text",
 		},
-	}, nil)
-	newRepo(t, 2, "multiline-commit-messages", nil, []FileChanges{
-		{
-			Filename:  "file1.md",
-			Versions:  []string{"file"},
-			CommitMsg: "A commit message\nwhich spans multiple lines",
-		},
-		{
-			Filename:  "file3.md",
-			Versions:  []string{"another file"},
-			CommitMsg: "a\nb",
-		},
-		{
-			Filename:  "file4.md",
-			Versions:  []string{"yet another file"},
-			CommitMsg: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed\n\ndo eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nDolorem cupiditate deleniti illo quo vitae culpa totam blanditiis. Architecto molestias eveniet quibusdam voluptas saepe modi reprehenderit quos. Nobis qui ipsam id et delectus. Corrupti cupiditate occaecati eius. Voluptas voluptatibus culpa nostrum. Id temporibus minima quis voluptate. Et sit quos autem est natus saepe. Velit vitae eos sint magnam et magnam dolore. Aspernatur suscipit dolorem sint fugiat repudiandae provident dolorem voluptatem. Ullam ut unde aperiam. Aut occaecati sit placeat adipisci non. Animi tempore autem molestias numquam ut qui iste. Pariatur recusandae ipsam maxime nihil quia veniam. Doloremque voluptatibus voluptatum consequatur illum iure aperiam deleniti non. Quo quisquam eveniet nihil animi. Et unde in sint eligendi aut autem. Veniam voluptates debitis ullam doloremque. Debitis provident tempore ab fugiat aut distinctio omnis. Vel sapiente nulla id. Quia aliquam ab est. Consequatur voluptatem id blanditiis distinctio. Qui expedita quibusdam qui earum quis culpa. Iste laudantium fuga vero provident voluptatem laboriosam ullam et. Alias consequuntur earum dolor nemo molestiae non neque.",
-		},
 	}, func(user *user_model.User, repo *repo_model.Repository) {
-		// status+tag on main branch
-		commitMainSha1 := commitNewFile(t, user, repo, "Another multiline commit message\nOnly this time, we have a big shiny status icon 🎉", "file1.5.md", "also a file")
-		commitMainSha2 := commitNewFile(t, user, repo, "This is a commit.\nThe commit knows where it is because it knows where it isn't.", "file2.md", "also a file")
-		addCommitStatus(t, user, repo, repo.DefaultBranch, commitMainSha1)
-		addCommitStatus(t, user, repo, repo.DefaultBranch, commitMainSha2)
-		tagCommitWithRelease(t, user, repo, commitMainSha2, "v1.4.2")
-
-		// status on PR
-		commitPrSha1 := addCommitWithMessageToBranch(t, user, repo, "main", "test-branch", "Yet another multiline commit message\nnow with a PR and status!", "file2.md", "", "still a file")
-		commitPrSha2 := addCommitWithMessageToBranch(t, user, repo, "test-branch", "test-branch", "One more message\nThis time, the details are longer than the summary. Imagine that!", "file2.md", commitPrSha1, "still a file")
-		commitPrSha3 := addCommitWithMessageToBranch(t, user, repo, "test-branch", "test-branch", "Normal commit message", "file2.md", commitPrSha2, "yep, still a file")
-		commitPrSha4 := addCommitWithMessageToBranch(t, user, repo, "test-branch", "test-branch", "Normal commit message with status", "file2.md", commitPrSha3, "yep, still a file")
-		addCommitWithMessageToBranch(t, user, repo, "test-branch", "test-branch", "Normal multiline\ncommit message", "file2.md", commitPrSha4, "yep, still a file")
-		postPullRequest(repo, "test-branch", user, 455, "pullreq", "PR with multiline commits")
-		addCommitStatus(t, user, repo, "test-branch", commitPrSha1)
-		addCommitStatus(t, user, repo, "test-branch", commitPrSha2)
-		addCommitStatus(t, user, repo, "test-branch", commitPrSha4)
+		// The live notification test needs issue notifications regardless of the default watch events.
+		require.NoError(t, repo_model.WatchRepoWithEvents(db.DefaultContext, user.ID, repo.ID, repo_model.WatchEventIssues))
 	})
 	newRepo(t, 2, "file-uploads", nil, []FileChanges{{
 		Filename: "UPLOAD_TEST.md",
