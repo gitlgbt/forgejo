@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./assets/logo.svg" alt="git.lgbt Logo" width="192" />
+  <img src="https://git.lgbt/gitlgbt/branding/raw/branch/main/svg/gitlgbtforge.svg" alt="gitlgbt forge logo" width="192" />
   <h1>gitlgbt/forgejo</h1>
   <p><strong>Source code for <a href="https://git.lgbt">git.lgbt</a></strong></p>
 </div>
