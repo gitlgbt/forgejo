@@ -1,10 +1,9 @@
 <script>
 import {nextTick} from 'vue';
-import {SvgIcon} from '../svg.js';
-import {showErrorToast} from '../modules/toast.js';
-import {GET} from '../modules/fetch.js';
+import {SvgIcon} from '../svg.ts';
+import {showErrorToast} from '../modules/toast.ts';
+import {GET} from '../modules/fetch.ts';
 import {filterRepos} from '../features/repo-switcher.ts';
-
 export default {
   components: {SvgIcon},
 
