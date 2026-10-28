@@ -13,12 +13,13 @@
 import {expect, type Page} from '@playwright/test';
 import {accessibilityCheck} from './shared/accessibility.ts';
 import {test} from './utils_e2e.ts';
+import {testModalClosure} from './shared/modals.ts';
 import {screenshot} from './shared/screenshots.ts';
 
 test.use({user: 'user2'});
 
+// Editing the root README.md file for image preview
 test('Markdown image preview behaviour', async ({page}) => {
-  // Editing the root README.md file for image preview
   const editPath = '/user2/repo1/src/branch/master/README.md';
 
   const response = await page.goto(editPath, {waitUntil: 'domcontentloaded'});
@@ -38,8 +39,10 @@ test('Markdown image preview behaviour', async ({page}) => {
   await page.locator('button[data-tab="preview"]').click();
 
   // Check for the image preview via the expected attribute
-  const preview = page.locator('div[data-tab="preview"] p[dir="auto"] a');
-  await expect(preview).toHaveAttribute('href', 'http://localhost:3003/user2/repo1/media/branch/master/assets/logo.svg');
+  // Note: branch master may redirect to a dyn-id- one
+  const preview = page.locator('div[data-tab="preview"] p[dir="auto"]');
+  await expect(preview.locator('a[href^="http://localhost:3003/user2/repo1/media/branch/"]')).toHaveCount(1);
+  await expect(preview.locator('a[href$="/assets/logo.svg"]')).toHaveCount(1);
   await screenshot(page);
 });
 
@@ -352,48 +355,6 @@ test('Markdown list continuation', async ({page}) => {
   }
 });
 
-function evaluateModalClosure(type: 'table' | 'link') {
-  const modalSelector = `[data-modal-name="new-markdown-${type}"]`;
-  const buttonSelector = `button[data-md-action="new-${type}"]`;
-
-  test.describe('Modal closure', () => {
-    test.beforeEach(async ({page}) => {
-      const area = page.locator('#comment-form');
-
-      const modal = page.locator(modalSelector);
-      await expect(modal).toBeHidden();
-
-      const button = area.locator(buttonSelector);
-      await button.click();
-    });
-
-    test('Esc key', async ({page}) => {
-      const modal = page.locator(modalSelector);
-      await expect(modal).toBeVisible();
-      await page.keyboard.press('Escape');
-      await expect(modal).toBeHidden();
-    });
-
-    test('Click outside', async ({page}) => {
-      const modal = page.locator(modalSelector);
-      await expect(modal).toBeVisible();
-      // can't select ::backdrop directly, so manually click just outside of the bounding box for the same effect
-      const box = await modal.boundingBox();
-      await page.mouse.click(box.x + 2, box.y + 2); // clicking the modal itself does nothing
-      await expect(modal).toBeVisible();
-      await page.mouse.click(box.x - 1, box.y);
-      await expect(modal).toBeHidden();
-    });
-
-    test('Cancel button', async ({page}) => {
-      const modal = page.locator(modalSelector);
-      await expect(modal).toBeVisible();
-      await modal.getByRole('button', {name: 'Cancel'}).click();
-      await expect(modal).toBeHidden();
-    });
-  });
-}
-
 test.describe('Markdown insert table', () => {
   test.beforeEach(async ({page}) => {
     // Load page with editor
@@ -401,7 +362,11 @@ test.describe('Markdown insert table', () => {
     expect(response?.status()).toBe(200);
   });
 
-  evaluateModalClosure('table');
+  testModalClosure(
+    (page) => page.locator('[data-modal-name="new-markdown-table"]'),
+    (page) => page.locator('#comment-form button[data-md-action="new-table"]'),
+    'Cancel',
+  );
 
   test('Button is enabled and functional', async ({page}) => {
     async function evaluateTableInsertion(page: Page, selector: string, isEditing: boolean) {
@@ -411,8 +376,8 @@ test.describe('Markdown insert table', () => {
 
       if (isEditing) {
         // Preparations for evaluating comment editing
-        await area.locator('.comment-header-right.actions details.dropdown').click();
-        await area.locator('.comment-header-right.actions details.dropdown .edit-content').click();
+        await area.locator('.comment-header-right.actions .dialog-dropdown .opener').click();
+        await area.locator('.comment-header-right.actions .dialog-dropdown dialog .edit-content').click();
         expectedContent = `good work!${expectedContent}`;
       }
 
@@ -455,7 +420,11 @@ test.describe('Markdown insert link', () => {
     expect(response?.status()).toBe(200);
   });
 
-  evaluateModalClosure('link');
+  testModalClosure(
+    (page) => page.locator('[data-modal-name="new-markdown-link"]'),
+    (page) => page.locator('#comment-form button[data-md-action="new-link"]'),
+    'Cancel',
+  );
 
   test('Button is enabled and functional', async ({page}) => {
     async function evaluateLinkInsertion(page: Page, selector: string, isEditing: boolean) {
@@ -468,8 +437,8 @@ test.describe('Markdown insert link', () => {
 
       if (isEditing) {
         // Preparations for evaluating comment editing
-        await area.locator('.comment-header-right.actions details.dropdown').click();
-        await area.locator('.comment-header-right.actions details.dropdown .edit-content').click();
+        await area.locator('.comment-header-right.actions .dialog-dropdown .opener').click();
+        await area.locator('.comment-header-right.actions .dialog-dropdown dialog .edit-content').click();
         expectedContent = `good work!${expectedContent}`;
       }
 
@@ -532,15 +501,24 @@ test.describe('Markdown insert link', () => {
       await screenshot(page);
     }
 
+    const response = await page.goto('/user2/repo1/issues/1');
+    expect(response?.status()).toBe(200);
+
     await expect(async () => {
       await evaluateLinkInsertion(page, '#comment-form', false);
+    }).toPass({timeout: 3000});
+
+    await expect(async () => {
       await evaluateLinkInsertion(page, '#issuecomment-2', true);
-    }).toPass();
+    }).toPass({timeout: 3000});
 
     await expect(async () => {
       await evaluateLinkInsertionShortcut(page, '#comment-form');
+    }).toPass({timeout: 3000});
+
+    await expect(async () => {
       await evaluateLinkInsertionShortcut(page, '#issuecomment-2');
-    }).toPass();
+    }).toPass({timeout: 3000});
   });
 });
 
@@ -807,8 +785,8 @@ test('Persistent monospace preference across multiple editors', async ({page}) =
 
   // Open a second editor (by clicking "Edit" in the context menu of a message)
   const openSecondEditor = async () => {
-    const contextMenu = page.locator('.timeline-item details:has(summary[aria-label="Comment menu"]):has(.edit-content)').first();
-    const editButton = contextMenu.locator('.content').getByText('Edit').first();
+    const contextMenu = page.locator('.timeline-item .dialog-dropdown:has(.opener[aria-label="Comment menu"]):has(.edit-content)').first();
+    const editButton = contextMenu.locator('dialog').getByText('Edit').first();
     await contextMenu.click();
     await editButton.click();
   };

@@ -36,6 +36,7 @@ type MinioStorageConfig struct {
 	Endpoint           string `ini:"MINIO_ENDPOINT" json:",omitempty"`
 	AccessKeyID        string `ini:"MINIO_ACCESS_KEY_ID" json:",omitempty"`
 	SecretAccessKey    string `ini:"MINIO_SECRET_ACCESS_KEY" json:",omitempty"`
+	IamEndpoint        string `ini:"MINIO_IAM_ENDPOINT" json:",omitempty"`
 	Bucket             string `ini:"MINIO_BUCKET" json:",omitempty"`
 	BucketLookup       string `ini:"MINIO_BUCKET_LOOKUP" json:",omitempty"`
 	Location           string `ini:"MINIO_LOCATION" json:",omitempty"`

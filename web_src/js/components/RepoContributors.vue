@@ -1,5 +1,5 @@
 <script>
-import {SvgIcon} from '../svg.js';
+import {SvgIcon} from '../svg.ts';
 import dayjs from 'dayjs';
 import {
   Chart,
@@ -11,7 +11,7 @@ import {
   LineElement,
   Filler,
 } from 'chart.js';
-import {GET} from '../modules/fetch.js';
+import {GET} from '../modules/fetch.ts';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import {Line as ChartLine} from 'vue-chartjs';
 import {
@@ -19,11 +19,11 @@ import {
   firstStartDateAfterDate,
   fillEmptyStartDaysWithZeroes,
 } from '../utils/time.js';
-import {chartJsColors} from '../utils/color.js';
-import {sleep} from '../utils.js';
+import {chartJsColors} from '../utils/color.ts';
+import {sleep} from '../utils.ts';
 import 'chartjs-adapter-dayjs-4/dist/chartjs-adapter-dayjs-4.esm';
 import $ from 'jquery';
-import {pathEscapeSegments} from '../utils/url.js';
+import {pathEscapeSegments} from '../utils/url.ts';
 
 const customEventListener = {
   id: 'customEventListener',
@@ -80,6 +80,33 @@ export default {
     xAxisMin: null,
     xAxisMax: null,
   }),
+  computed: {
+    processedTitleHTML() {
+      if (typeof this.xAxisMin !== 'number' || this.xAxisMin <= 0) {
+        // a repo's contributions, if there are any, always have a known absolute min, so this not being the case is cause to bail early
+        return '';
+      }
+      const xAxisMin = new Date(this.xAxisMin);
+
+      if (typeof this.xAxisMax !== 'number' || this.xAxisMax <= 0) {
+        // the end date could very well be omittted; this implies a "since" situation
+        return this.locale.contributorsSinceTitle
+          .replace('{0}', this.relativeTimeHTML(xAxisMin));
+      }
+      const xAxisMax = new Date(this.xAxisMax);
+      const now = new Date();
+
+      if (xAxisMax > now) {
+        // contributions are unlikely to be from the future
+        return this.locale.contributorsSinceTitle
+          .replace('{0}', this.relativeTimeHTML(xAxisMin));
+      }
+
+      return this.locale.contributorsBetweenTitle
+        .replace('{0}', this.relativeTimeHTML(xAxisMin))
+        .replace('{1}', this.relativeTimeHTML(xAxisMax));
+    },
+  },
   mounted() {
     this.fetchGraphData();
 
@@ -93,6 +120,26 @@ export default {
     });
   },
   methods: {
+    /**
+     * Composes HTML of a `<relative-time>` element from the given date-time value.
+     * @param {Date} datetime
+     */
+    relativeTimeHTML(datetime) {
+      if (!(datetime instanceof Date)) {
+        // Defense-in-depth: until we have tsc checking this for us, we should take care not to allow interpolating untrusted text into HTML.
+        // A Date instance always stringifies safely.
+        return '';
+      }
+      return `<relative-time
+        format="datetime"
+        year="numeric"
+        month="short"
+        day="numeric"
+        weekday=""
+        datetime="${datetime}"
+      >${datetime}</relative-time>`;
+    },
+
     sortContributors() {
       const contributors = this.filterContributorWeeksByDateRange();
       const criteria = `total_${this.type}`;
@@ -319,61 +366,47 @@ export default {
 </script>
 <template>
   <div>
-    <div class="ui header tw-flex tw-items-center tw-justify-between">
-      <div>
-        <relative-time
-          v-if="xAxisMin > 0"
-          format="datetime"
-          year="numeric"
-          month="short"
-          day="numeric"
-          weekday=""
-          :datetime="new Date(xAxisMin)"
-        >
-          {{ new Date(xAxisMin) }}
-        </relative-time>
-        {{ isLoading ? locale.loadingTitle : errorText ? locale.loadingTitleFailed: "-" }}
-        <relative-time
-          v-if="xAxisMax > 0"
-          format="datetime"
-          year="numeric"
-          month="short"
-          day="numeric"
-          weekday=""
-          :datetime="new Date(xAxisMax)"
-        >
-          {{ new Date(xAxisMax) }}
-        </relative-time>
-      </div>
-      <div>
-        <!-- Contribution type -->
-        <div class="ui dropdown jump" id="repo-contributors">
-          <div class="ui basic compact button">
-            <span class="not-mobile">{{ locale.filterLabel }}</span> <strong>{{ locale.contributionType[type] }}</strong>
-            <svg-icon name="octicon-triangle-down" :size="14"/>
+    <div class="tw-flex tw-items-center tw-justify-between">
+      <h1 v-if="isLoading || errorText" class="tw-m-0">
+        {{ locale.contributorsTitle }}
+      </h1>
+      <!-- v-html safety: the string interpolates checked Date instances into a locale template, never arbitrary user-provided strings. -->
+      <!-- eslint-disable-next-line vue/no-v-html -->
+      <h1 v-else class="tw-m-0" v-html="processedTitleHTML"/>
+
+      <!-- Contribution type -->
+      <div class="ui dropdown jump" id="repo-contributors">
+        <div class="ui basic compact button">
+          <span class="not-mobile">{{ locale.filterLabel }}</span> <strong>{{ locale.contributionType[type] }}</strong>
+          <svg-icon name="octicon-triangle-down" :size="14"/>
+        </div>
+        <div class="menu">
+          <div :class="['item', {'selected': type === 'commits'}]" data-value="commits">
+            {{ locale.contributionType.commits }}
           </div>
-          <div class="menu">
-            <div :class="['item', {'selected': type === 'commits'}]" data-value="commits">
-              {{ locale.contributionType.commits }}
-            </div>
-            <div :class="['item', {'selected': type === 'additions'}]" data-value="additions">
-              {{ locale.contributionType.additions }}
-            </div>
-            <div :class="['item', {'selected': type === 'deletions'}]" data-value="deletions">
-              {{ locale.contributionType.deletions }}
-            </div>
+          <div :class="['item', {'selected': type === 'additions'}]" data-value="additions">
+            {{ locale.contributionType.additions }}
+          </div>
+          <div :class="['item', {'selected': type === 'deletions'}]" data-value="deletions">
+            {{ locale.contributionType.deletions }}
           </div>
         </div>
       </div>
     </div>
     <div class="tw-flex ui segment main-graph">
       <div v-if="isLoading || errorText !== ''" class="gt-tc tw-m-auto">
-        <div v-if="isLoading">
+        <h2 v-if="isLoading">
+          {{ locale.loadingTitle }}
+        </h2>
+        <h2 v-else-if="errorText">
+          {{ locale.loadingTitleFailed }}
+        </h2>
+        <div v-if="isLoading" class="tw-flex tw-justify-center">
           <SvgIcon name="octicon-sync" class="tw-mr-2 job-status-rotate"/>
           {{ locale.loadingInfo }}
         </div>
-        <div v-else class="text red">
-          <SvgIcon name="octicon-x-circle-fill"/>
+        <div v-else class="text red tw-flex tw-justify-center">
+          <SvgIcon name="octicon-x-circle-fill" class="tw-mr-2"/>
           {{ errorText }}
         </div>
       </div>
@@ -404,9 +437,9 @@ export default {
                   {{ contributor.total_commits.toLocaleString() }} {{ locale.contributionType.commits }}
                 </a>
               </strong>
-              <strong v-if="contributor.total_additions" class="text green">{{ contributor.total_additions.toLocaleString() }}++ </strong>
+              <strong v-if="contributor.total_additions" class="text green">{{ contributor.total_additions.toLocaleString() }}&plus;&plus; </strong>
               <strong v-if="contributor.total_deletions" class="text red">
-                {{ contributor.total_deletions.toLocaleString() }}--</strong>
+                {{ contributor.total_deletions.toLocaleString() }}&minus;&minus;</strong>
             </p>
           </div>
         </div>
@@ -426,6 +459,11 @@ export default {
 .main-graph {
   height: 260px;
   padding-top: 2px;
+  cursor: pointer;
+}
+
+h2 {
+  text-align: center;
 }
 
 .contributor-grid {

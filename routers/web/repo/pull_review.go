@@ -8,17 +8,21 @@ import (
 	"fmt"
 	"net/http"
 
+	"forgejo.org/models"
 	issues_model "forgejo.org/models/issues"
 	pull_model "forgejo.org/models/pull"
+	repo_model "forgejo.org/models/repo"
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/json"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
 	"forgejo.org/services/context"
 	"forgejo.org/services/context/upload"
 	"forgejo.org/services/forms"
 	pull_service "forgejo.org/services/pull"
+	files_service "forgejo.org/services/repository/files"
 )
 
 const (
@@ -91,6 +95,15 @@ func CreateCodeComment(ctx *context.Context) {
 
 	if err := pull_service.ValidateCodeCommentLineRange(form.ExtraLinesCount); err != nil {
 		ctx.Error(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := pull_service.ValidateCodeCommentSuggestions(form.Content); err != nil {
+		if errors.Is(err, pull_service.ErrMultipleSuggestions) {
+			ctx.Error(http.StatusBadRequest, ctx.Locale.TrString("repo.issues.review.one_suggestion_per_comment"))
+			return
+		}
+		ctx.ServerError("ValidateCodeCommentSuggestions", err)
 		return
 	}
 
@@ -224,6 +237,13 @@ func renderConversation(ctx *context.Context, comment *issues_model.Comment, ori
 		ctx.ServerError("comment.Issue.LoadPullRequest", err)
 		return
 	}
+
+	// gates the "Apply suggestion" button on AJAX re-renders
+	if ctx.Data["HeadBranchIsEditable"], err = headBranchIsEditable(ctx, comment.Issue); err != nil {
+		ctx.ServerError("headBranchIsEditable", err)
+		return
+	}
+
 	pullHeadCommitID, err := ctx.Repo.GitRepo.GetRefCommitID(comment.Issue.PullRequest.GetGitRefName())
 	if err != nil {
 		ctx.ServerError("GetRefCommitID", err)
@@ -236,6 +256,124 @@ func renderConversation(ctx *context.Context, comment *issues_model.Comment, ori
 	case "timeline":
 		ctx.HTML(http.StatusOK, tplTimelineConversation)
 	}
+}
+
+// headBranchIsEditable reports whether doer may edit the PR head branch; gates the
+// "Apply suggestion" button when code comments are re-rendered over AJAX.
+func headBranchIsEditable(ctx *context.Context, issue *issues_model.Issue) (bool, error) {
+	if err := issue.LoadPullRequest(ctx); err != nil {
+		return false, err
+	}
+	if issue.PullRequest == nil {
+		return false, nil
+	}
+	return pull_service.CanEditHeadBranch(ctx, ctx.Doer, issue.PullRequest)
+}
+
+// Maximum number of suggestions per apply request.
+const maxBatchApplySuggestions = 100
+
+// ApplySuggestion applies a single ```suggestion block from a review comment onto the PR head branch.
+func ApplySuggestion(ctx *context.Context) {
+	var form struct {
+		CommentIDs    []int64 `json:"comment_ids"`
+		CommitSummary string  `json:"commit_summary"`
+		CommitMessage string  `json:"commit_message"`
+	}
+	if err := json.NewDecoder(ctx.Req.Body).Decode(&form); err != nil ||
+		len(form.CommentIDs) == 0 || len(form.CommentIDs) > maxBatchApplySuggestions {
+		ctx.Error(http.StatusBadRequest)
+		return
+	}
+
+	// De-duplicate (preserving order) so a comment is never applied twice and a crafted body can't inflate the work.
+	commentIDs := make([]int64, 0, len(form.CommentIDs))
+	seen := make(map[int64]bool, len(form.CommentIDs))
+	for _, id := range form.CommentIDs {
+		if !seen[id] {
+			seen[id] = true
+			commentIDs = append(commentIDs, id)
+		}
+	}
+
+	pr, err := issues_model.GetPullRequestByIndex(ctx, ctx.Repo.Repository.ID, ctx.ParamsInt64(":index"))
+	if err != nil {
+		if issues_model.IsErrPullRequestNotExist(err) {
+			ctx.NotFound("GetPullRequestByIndex", err)
+		} else {
+			ctx.ServerError("GetPullRequestByIndex", err)
+		}
+		return
+	}
+
+	comments := make([]*issues_model.Comment, 0, len(commentIDs))
+	edits := make([]*files_service.SuggestionEdit, 0, len(commentIDs))
+	for _, commentID := range commentIDs {
+		comment, err := issues_model.GetCommentByID(ctx, commentID)
+		if err != nil {
+			if issues_model.IsErrCommentNotExist(err) {
+				ctx.NotFound("GetCommentByID", err)
+			} else {
+				ctx.ServerError("GetCommentByID", err)
+			}
+			return
+		}
+		// Every comment must belong to the pull request addressed by the URL.
+		if comment.IssueID != pr.IssueID {
+			ctx.NotFound("comment does not belong to this pull request", nil)
+			return
+		}
+		comment.Issue = pr.Issue // reuse the single loaded issue (resolveSuggestionConversation needs it)
+		comments = append(comments, comment)
+		edits = append(edits, &files_service.SuggestionEdit{Comment: comment})
+	}
+
+	_, err = files_service.ApplySuggestions(ctx, ctx.Doer, pr, edits, form.CommitSummary, form.CommitMessage)
+	if err != nil {
+		var errArchived repo_model.ErrRepoIsArchived
+		switch {
+		case errors.Is(err, util.ErrPermissionDenied):
+			ctx.Error(http.StatusForbidden, err.Error())
+		case errors.Is(err, files_service.ErrSuggestionQuotaExceeded):
+			ctx.Error(http.StatusRequestEntityTooLarge, err.Error())
+		case errors.Is(err, util.ErrInvalidArgument),
+			models.IsErrSHADoesNotMatch(err),
+			models.IsErrCommitIDDoesNotMatch(err),
+			models.IsErrUserCannotCommit(err),
+			models.IsErrFilePathProtected(err),
+			errors.As(err, &errArchived):
+			// expected, user-facing failures (incl. an archived head/fork repo): surface as a toast
+			ctx.JSONError(err.Error())
+		default:
+			ctx.ServerError("ApplySuggestions", err)
+		}
+		return
+	}
+
+	// Applying a suggestion addresses its review comment, so resolve each conversation (best-effort:
+	// it requires resolve permission and must never undo or block the successful apply).
+	for _, comment := range comments {
+		if err := resolveSuggestionConversation(ctx, comment); err != nil {
+			log.Error("ApplySuggestion: resolve conversation for comment %d: %v", comment.ID, err)
+		}
+	}
+
+	ctx.JSONOK()
+}
+
+// resolveSuggestionConversation marks the code conversation a just-applied suggestion belongs to as
+// resolved. It resolves the thread's first comment, which is what drives the conversation's resolved
+// state in the UI. It is a no-op when the doer lacks resolve permission.
+func resolveSuggestionConversation(ctx *context.Context, comment *issues_model.Comment) error {
+	ok, err := issues_model.CanMarkConversation(ctx, comment.Issue, ctx.Doer)
+	if err != nil || !ok {
+		return err
+	}
+	conversation, err := issues_model.FetchCodeConversation(ctx, comment, ctx.Doer)
+	if err != nil || len(conversation) == 0 {
+		return err
+	}
+	return issues_model.MarkConversation(ctx, conversation[0], ctx.Doer, true)
 }
 
 // SubmitReview creates a review out of the existing pending review or creates a new one if no pending review exist

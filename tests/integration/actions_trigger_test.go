@@ -1322,7 +1322,8 @@ jobs:
 }
 
 // Early in the job parsing, dynamic matrices may need to access workflow inputs.  Boolean inputs need special handling
-// which is what this test case covers.
+// (the string value 'false' provided as an input is treated as the boolean value false in evaluations), which is what
+// this test case covers.
 func TestActionsWorkflowDispatchDynamicMatrixBooleanInput(t *testing.T) {
 	onApplicationRun(t, func(t *testing.T, u *url.URL) {
 		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
@@ -1572,6 +1573,70 @@ jobs:
 			Name:  "target-job",
 		})
 		assert.Equal(t, actions_model.StatusSkipped.String(), targetJob.Status.String())
+	})
+}
+
+// Workflow with a boolean input should be consistently converted to a boolean value
+func TestActionsWorkflowDispatchBooleanInputConsistency(t *testing.T) {
+	if !setting.Database.Type.IsSQLite3() {
+		// mockRunner only supported with sqlite
+		t.Skip()
+	}
+
+	onApplicationRun(t, func(t *testing.T, u *url.URL) {
+		user2 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 2})
+
+		// create the repo
+		var sha string
+		repo := forgery.CreateRepository(t, user2, &forgery.CreateRepositoryOptions{
+			Name:      "repo-workflow-dispatch",
+			LatestSha: &sha,
+			Files: forgery.MapFS{
+				".forgejo/workflows/dispatch.yml": forgery.MapFile(`
+name: test
+on:
+  workflow_dispatch:
+    inputs:
+      win32:
+        description: 'Boolean'
+        type: boolean
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.win32 }} # verifies that input is in boolean type, not string
+    steps:
+      - run: echo helloworld
+`,
+				),
+			},
+		})
+		forgery.EnableRepoUnit(t, repo, unit_model.TypeActions, nil)
+
+		gitRepo, err := gitrepo.OpenRepository(db.DefaultContext, repo)
+		require.NoError(t, err)
+		defer gitRepo.Close()
+
+		workflow, err := actions_service.GetWorkflowFromCommit(gitRepo, "main", "dispatch.yml")
+		require.NoError(t, err)
+
+		inputGetter := func(key string) string {
+			return "false" // the string will be interpreted as a boolean because `type: boolean` on the input def in workflow
+		}
+		_, _, err = workflow.Dispatch(db.DefaultContext, inputGetter, repo, user2)
+		require.NoError(t, err)
+
+		runner := newMockRunner()
+		runner.registerAsRepoRunner(t, user2.Name, repo.Name, "mock-runner", []string{"ubuntu-latest"})
+
+		task := runner.fetchTask(t)
+
+		// Verify that ${{ forgejo.event.inputs.win32 }} would be the boolean value, not a string value
+		context := task.GetContext().AsMap()
+		event, ok := context["event"].(map[string]any)
+		require.True(t, ok)
+		inputs, ok := event["inputs"].(map[string]any)
+		require.True(t, ok)
+		assert.Equal(t, false, inputs["win32"])
 	})
 }
 
@@ -2105,11 +2170,19 @@ func TestActionsForkPullRequest(t *testing.T) {
 		// and triggering the issue_comment event.
 		runFromBaseWithoutPullRequest
 	)
+	type expectedRef int
+	const (
+		// forgejo.ref will be refs/pull/%d/head
+		refPullRequest expectedRef = iota
+		// refs/heads/main
+		refBaseBranch
+	)
 	type testCase struct {
 		name             string // must be safe to use in a repo name
 		workflowPreamble string
 		triggerEvent     func(t *testing.T, baseRepo *repo_model.Repository, pr *issues_model.PullRequest, token string)
 		expectedResult   expectedResult
+		expectedRef      expectedRef
 	}
 
 	testCases := []testCase{
@@ -2196,72 +2269,84 @@ func TestActionsForkPullRequest(t *testing.T) {
 			workflowPreamble: "on: { pull_request_target: { types: [assigned] } }\n",
 			triggerEvent:     assignPR,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-unassigned",
 			workflowPreamble: "on: { pull_request_target: { types: [unassigned] } }\n",
 			triggerEvent:     unassignPR,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-labeled",
 			workflowPreamble: "on: { pull_request_target: { types: [labeled] } }\n",
 			triggerEvent:     labelPR,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-unlabeled",
 			workflowPreamble: "on: { pull_request_target: { types: [unlabeled] } }\n",
 			triggerEvent:     unlabelPR,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-edited",
 			workflowPreamble: "on: { pull_request_target: { types: [edited] } }\n",
 			triggerEvent:     editPRTitle,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-closed",
 			workflowPreamble: "on: { pull_request_target: { types: [closed] } }\n",
 			triggerEvent:     closePR,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-reopened",
 			workflowPreamble: "on: { pull_request_target: { types: [reopened] } }\n",
 			triggerEvent:     reopenPR,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-synchronize",
 			workflowPreamble: "on: { pull_request_target: { types: [synchronize] } }\n",
 			triggerEvent:     synchronizePR,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-milestoned",
 			workflowPreamble: "on: { pull_request_target: { types: [milestoned] } }\n",
 			triggerEvent:     milestonePR,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-demilestoned",
 			workflowPreamble: "on: { pull_request_target: { types: [demilestoned] } }\n",
 			triggerEvent:     demilestonePR,
 			expectedResult:   runFromBase,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "pull_request_target-review_requested",
 			workflowPreamble: "on: { pull_request_target: { types: [review_requested] } }\n",
 			triggerEvent:     requestReview,
 			expectedResult:   runFromBase,
+			expectedRef:      refPullRequest, // unexpected for pull_request_target, possible bug; generateGiteaContextForRun doesn't get a PR payload; out of scope for current patch
 		},
 		{
 			name:             "pull_request_target-review_request_removed",
 			workflowPreamble: "on: { pull_request_target: { types: [review_request_removed] } }\n",
 			triggerEvent:     removeReviewRequest,
 			expectedResult:   runFromBase,
+			expectedRef:      refPullRequest, // unexpected for pull_request_target, possible bug; generateGiteaContextForRun doesn't get a PR payload; out of scope for current patch
 		},
 		{
 			name:             "pull_request_review",
@@ -2292,18 +2377,21 @@ func TestActionsForkPullRequest(t *testing.T) {
 			workflowPreamble: "on: { issue_comment: { types: [created] } }",
 			triggerEvent:     createPRComment,
 			expectedResult:   runFromBaseWithoutPullRequest,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "issue_comment-edited",
 			workflowPreamble: "on: { issue_comment: { types: [edited] } }",
 			triggerEvent:     editPRComment,
 			expectedResult:   runFromBaseWithoutPullRequest,
+			expectedRef:      refBaseBranch,
 		},
 		{
 			name:             "issue_comment-deleted",
 			workflowPreamble: "on: { issue_comment: { types: [deleted] } }",
 			triggerEvent:     deletePRComment,
 			expectedResult:   runFromBaseWithoutPullRequest,
+			expectedRef:      refBaseBranch,
 		},
 	}
 
@@ -2443,6 +2531,16 @@ jobs:
 					assert.Contains(t, task.Secrets, "MY_SECRET")
 					assert.Len(t, task.Secrets, 4)
 					writeToRepoCode(t, baseRepo, task.Secrets["FORGEJO_TOKEN"], http.StatusCreated)
+				}
+
+				ref, ok := task.Context.AsMap()["ref"]
+				switch tc.expectedRef {
+				case refPullRequest:
+					require.True(t, ok, "'ref' must exist in context")
+					assert.Equal(t, "refs/pull/1/head", ref)
+				case refBaseBranch:
+					require.True(t, ok, "'ref' must exist in context")
+					assert.Equal(t, "refs/heads/main", ref)
 				}
 
 				runner.execTask(t, task, &mockTaskOutcome{

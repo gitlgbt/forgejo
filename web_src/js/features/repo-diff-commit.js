@@ -1,5 +1,5 @@
-import {hideElem, showElem, toggleElem} from '../utils/dom.js';
-import {GET} from '../modules/fetch.js';
+import {hideElem, showElem, toggleElem} from '../utils/dom.ts';
+import {GET} from '../modules/fetch.ts';
 
 async function loadBranchesAndTags(area, loadingButton) {
   loadingButton.classList.add('disabled');

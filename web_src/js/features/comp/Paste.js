@@ -1,6 +1,6 @@
-import {POST} from '../../modules/fetch.js';
-import {getPastedContent, replaceTextareaSelection} from '../../utils/dom.js';
-import {isUrl} from '../../utils/url.js';
+import {POST} from '../../modules/fetch.ts';
+import {getPastedContent, replaceTextareaSelection} from '../../utils/dom.ts';
+import {isUrl} from '../../utils/url.ts';
 
 async function uploadFile(file, uploadUrl) {
   const formData = new FormData();

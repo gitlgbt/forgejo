@@ -84,13 +84,13 @@ var (
 		"git-upload-pack":    perm.AccessModeRead,
 		"git-upload-archive": perm.AccessModeRead,
 		"git-receive-pack":   perm.AccessModeWrite,
-		lfsAuthenticateVerb:  perm.AccessModeNone,
+		lfsAuthenticateVerb:  perm.AccessModeNone, // always calculated based upon the lfs verb
 	}
 	alphaDashDotPattern = regexp.MustCompile(`[^\w-\.]`)
 )
 
 func sshLog(ctx context.Context, level log.Level, message string) error {
-	if testing.Testing() || setting.InternalToken == "" {
+	if testing.Testing() {
 		return nil
 	}
 

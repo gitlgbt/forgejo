@@ -4,13 +4,13 @@ import {clippie} from 'clippie';
 import {createDropzone} from './dropzone.js';
 import {showGlobalErrorMessage} from '../bootstrap.js';
 import {handleGlobalEnterQuickSubmit} from './comp/QuickSubmit.js';
-import {svg} from '../svg.js';
-import {hideElem, showElem, toggleElem, resetForms, initSubmitEventPolyfill, submitEventSubmitter} from '../utils/dom.js';
+import {svg} from '../svg.ts';
+import {hideElem, showElem, toggleElem, resetForms, initSubmitEventPolyfill, submitEventSubmitter} from '../utils/dom.ts';
 import {htmlEscape} from 'escape-goat';
 import {showTemporaryTooltip} from '../modules/tippy.js';
-import {showErrorToast} from '../modules/toast.js';
-import {request, POST, GET} from '../modules/fetch.js';
-import '../htmx.js';
+import {showErrorToast} from '../modules/toast.ts';
+import {request, POST, GET} from '../modules/fetch.ts';
+import '../htmx.ts';
 import {initTab} from '../modules/tab.ts';
 import {initGlobalShowModal} from './show-modal.ts';
 import {showModal} from '../modules/modal.ts';
@@ -255,11 +255,13 @@ export async function initDropzone(dropzoneEl, zone = undefined) {
     input.name = 'files';
     input.type = 'hidden';
     input.value = data.uuid;
+    $(input).data('ays-orig', 'dirty'); // manually mark the field "dirty" using a dummy "original value"
     const inputPath = document.createElement('input');
     inputPath.name = `files_fullpath[${data.uuid}]`;
     inputPath.type = 'hidden';
     inputPath.value = htmlEscape(file.fullPath || file.name);
     dropzoneEl.querySelector('.files').append(input, inputPath);
+    dropzoneEl.dispatchEvent(new Event('rescan', {bubbles: true})); // re-check form inputs (we just added one, so probably "dirty")
 
     // Create a "Copy Link" element, to conveniently copy the image
     // or file link as Markdown to the clipboard
@@ -304,6 +306,7 @@ export async function initDropzone(dropzoneEl, zone = undefined) {
       this.on('removedfile', async (file) => {
         document.getElementById(file.uuid)?.remove();
         document.querySelector(`input[name="files_fullpath[${file.uuid}]"]`)?.remove();
+        dropzoneEl.dispatchEvent(new Event('checkform', {bubbles: true})); // re-check form inputs (is it still "dirty"? have we removed all file previews?)
         if (disableRemovedfileEvent) return;
         if (dropzoneEl.getAttribute('data-remove-url') && !fileUuidDict[file.uuid].submitted) {
           try {

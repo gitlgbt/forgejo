@@ -7,7 +7,7 @@ import {
   CategoryScale,
   LinearScale,
 } from 'chart.js';
-import {chartJsColors} from '../utils/color.js';
+import {chartJsColors} from '../utils/color.ts';
 
 Chart.defaults.color = chartJsColors.text;
 Chart.defaults.borderColor = chartJsColors.border;

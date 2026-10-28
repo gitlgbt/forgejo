@@ -9,30 +9,30 @@
 		<button type="button" class="secondary button" command="show-modal" commandfor="long-modal">Long</button>
 	</div>
 
-	<dialog id="short-modal" closedby="any">
+	<dialog class="modal" id="short-modal" closedby="any">
 		<article>
 			<header>Short modal</header>
 			<div class="content">🐈</div>
 			<footer class="actions">
-				<button type="button" class="secondary button" command="close" commandfor="short-modal">{{ctx.Locale.Tr "settings.cancel"}}</button>
+				<button type="button" class="secondary button" command="close" commandfor="short-modal">{{ctx.Locale.Tr "modal.close"}}</button>
 			</footer>
 		</article>
 	</dialog>
-	<dialog id="medium-modal" closedby="any">
+	<dialog class="modal" id="medium-modal" closedby="any">
 		<article>
 			<header>Medium modal</header>
 			<div class="content">aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>
 			<footer class="actions">
-				<button type="button" class="secondary button" command="close" commandfor="medium-modal">{{ctx.Locale.Tr "settings.cancel"}}</button>
+				<button type="button" class="secondary button" command="close" commandfor="medium-modal">{{ctx.Locale.Tr "modal.close"}}</button>
 			</footer>
 		</article>
 	</dialog>
-	<dialog id="long-modal" closedby="any">
+	<dialog class="modal" id="long-modal" closedby="any">
 		<article>
 			<header>Long modal</header>
 			<div class="content">aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa</div>
 			<footer class="actions">
-				<button type="button" class="secondary button" command="close" commandfor="long-modal">{{ctx.Locale.Tr "settings.cancel"}}</button>
+				<button type="button" class="secondary button" command="close" commandfor="long-modal">{{ctx.Locale.Tr "modal.close"}}</button>
 			</footer>
 		</article>
 	</dialog>

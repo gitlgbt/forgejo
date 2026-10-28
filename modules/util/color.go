@@ -36,7 +36,7 @@ func HexToRBGColor(colorString string) (float64, float64, float64) {
 }
 
 // Returns relative luminance for a SRGB color - https://en.wikipedia.org/wiki/Relative_luminance
-// Keep this in sync with web_src/js/utils/color.js
+// Keep this in sync with web_src/js/utils/color.ts
 func GetRelativeLuminance(color string) float64 {
 	r, g, b := HexToRBGColor(color)
 	return (0.2126729*r + 0.7151522*g + 0.0721750*b) / 255

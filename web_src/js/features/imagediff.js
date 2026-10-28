@@ -1,7 +1,7 @@
 import $ from 'jquery';
-import {GET} from '../modules/fetch.js';
-import {hideElem, loadElem, queryElemChildren} from '../utils/dom.js';
-import {parseDom} from '../utils.js';
+import {GET} from '../modules/fetch.ts';
+import {hideElem, loadElem, queryElemChildren} from '../utils/dom.ts';
+import {parseDom} from '../utils.ts';
 
 function getDefaultSvgBoundsIfUndefined(text, src) {
   const DefaultSize = 300;

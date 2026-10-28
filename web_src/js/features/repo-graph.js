@@ -1,6 +1,6 @@
 import $ from 'jquery';
-import {hideElem, showElem} from '../utils/dom.js';
-import {GET} from '../modules/fetch.js';
+import {hideElem, showElem} from '../utils/dom.ts';
+import {GET} from '../modules/fetch.ts';
 
 export function initRepoGraphGit() {
   const graphContainer = document.getElementById('git-graph-container');
@@ -65,7 +65,7 @@ export function initRepoGraphGit() {
     hideElem('#rev-container');
     showElem('#loading-indicator');
     (async () => {
-      const response = await GET(String(ajaxUrl));
+      const response = await GET(ajaxUrl);
       const html = await response.text();
       const div = document.createElement('div');
       div.innerHTML = html;

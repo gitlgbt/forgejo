@@ -8,12 +8,14 @@ package git
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +24,10 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
 )
+
+var ErrRedirectNotAllowed = errors.New("A redirect was encountered during cloning of this git repository. Redirects are not allowed")
+
+var redirectsRegex = regexp.MustCompile("The requested URL returned error: 3[0-9]{2}")
 
 // GPGSettings represents the default GPG settings for this repository
 type GPGSettings struct {
@@ -90,23 +96,19 @@ func InitRepository(ctx context.Context, repoPath string, bare bool, objectForma
 	return err
 }
 
-// IsEmpty Check if repository is empty.
+// IsEmpty checks if the repository is empty. It does so by
+// determining if there's any ref in the repository.
 func (repo *Repository) IsEmpty() (bool, error) {
-	var errbuf, output strings.Builder
-	if err := NewCommand(repo.Ctx).AddOptionFormat("--git-dir=%s", repo.Path).AddArguments("rev-list", "-n", "1", "--all").
-		Run(&RunOpts{
-			Dir:    repo.Path,
-			Stdout: &output,
-			Stderr: &errbuf,
-		}); err != nil {
-		if (err.Error() == "exit status 1" && strings.TrimSpace(errbuf.String()) == "") || err.Error() == "exit status 129" {
-			// git 2.11 exits with 129 if the repo is empty
-			return true, nil
-		}
-		return true, fmt.Errorf("check empty: %w - %s", err, errbuf.String())
+	stdout, _, err := NewCommand(repo.Ctx).
+		AddOptionFormat("--git-dir=%s", repo.Path).
+		AddArguments("for-each-ref", "--count=1", `--format=found`).
+		SetDescription("Empty repository check").
+		RunStdString(&RunOpts{Dir: repo.Path})
+	if err != nil {
+		return false, err
 	}
 
-	return strings.TrimSpace(output.String()) == "", nil
+	return strings.TrimSpace(stdout) == "", nil
 }
 
 // CloneRepoOptions options when clone a repository
@@ -127,6 +129,14 @@ type CloneRepoOptions struct {
 // Clone clones original repository to target path.
 func Clone(ctx context.Context, from, to string, opts CloneRepoOptions) error {
 	return CloneWithArgs(ctx, globalCommandArgs, from, to, opts)
+}
+
+func enrichCloneError(err error, stderr string) error {
+	if redirectsRegex.MatchString(stderr) {
+		return ErrRedirectNotAllowed
+	}
+
+	return ConcatenateError(err, stderr)
 }
 
 // CloneWithArgs original repository to target path.
@@ -199,7 +209,7 @@ func CloneWithArgs(ctx context.Context, args TrustedCmdArgs, from, to string, op
 		Stdout:  io.Discard,
 		Stderr:  stderr,
 	}); err != nil {
-		return ConcatenateError(err, stderr.String())
+		return enrichCloneError(err, stderr.String())
 	}
 	return nil
 }

@@ -1028,6 +1028,7 @@ func Routes() *web.Route {
 						m.Post("/update", reqToken(), context.EnforceQuotaAPI(quota_model.LimitSubjectSizeGitAll, context.QuotaTargetRepo), repo.UpdatePullRequest)
 						m.Get("/commits", repo.GetPullRequestCommits)
 						m.Get("/files", repo.GetPullRequestFiles)
+						m.Post("/comments/{id}/replies", reqToken(), mustNotBeArchived(), reqValidCommentID("id"), bind(api.CreatePullReviewCommentReplyOptions{}), repo.CreatePullReviewCommentReply)
 						m.Combo("/merge").Get(repo.IsPullRequestMerged).
 							Post(reqToken(), mustNotBeArchived(), bind(forms.MergePullRequestForm{}), context.EnforceQuotaAPI(quota_model.LimitSubjectSizeGitAll, context.QuotaTargetRepo), repo.MergePullRequest).
 							Delete(reqToken(), mustNotBeArchived(), repo.CancelScheduledAutoMerge)
@@ -1356,6 +1357,12 @@ func Routes() *web.Route {
 					Put(reqToken(), reqOrgOwnership(), org.AddTeamMember).
 					Delete(reqToken(), reqOrgOwnership(), org.RemoveTeamMember)
 			})
+			m.Group("/invitations", func() {
+				m.Get("", reqToken(), org.GetTeamInvitations)
+				m.Combo("/{inviteid}").
+					Delete(reqToken(), reqOrgOwnership(), org.RemoveTeamInvitation).
+					Get(reqToken(), reqOrgOwnership(), org.GetTeamInvitation)
+			})
 			m.Group("/repos", func() {
 				m.Get("", reqToken(), org.GetTeamRepos)
 				m.Combo("/{org}/{reponame}", orgAssignment, orgRepoAssignment("reponame"), repoAccess()).
@@ -1365,6 +1372,14 @@ func Routes() *web.Route {
 			})
 			m.Get("/activities/feeds", org.ListTeamActivityFeeds)
 		}, tokenRequiresScopes(auth_model.AccessTokenScopeCategoryOrganization), orgTeamAssignment, reqToken(), reqTeamMembership(), checkTokenPublicOnly())
+		m.Group("/user/team_invitations", func() {
+			m.Get("", org.ListMyTeamInvitations)
+			m.Group("/{inviteid}", func() {
+				m.Get("", org.GetMyTeamInvitation)
+				m.Post("/accept", bind(api.AcceptTeamInviteOptions{}), org.AcceptMyTeamInvitation)
+				m.Post("/decline", org.DeclineMyTeamInvitation)
+			})
+		}, reqToken(), tokenRequiresScopes(auth_model.AccessTokenScopeCategoryUser))
 
 		m.Group("/admin", func() {
 			m.Group("/cron", func() {

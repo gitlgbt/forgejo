@@ -135,8 +135,9 @@ func TestMinioCredentials(t *testing.T) {
 		cfg := setting.MinioStorageConfig{
 			AccessKeyID:     ExpectedAccessKey,
 			SecretAccessKey: ExpectedSecretAccessKey,
+			IamEndpoint:     FakeEndpoint,
 		}
-		creds := buildMinioCredentials(cfg, FakeEndpoint)
+		creds := buildMinioCredentials(cfg)
 		v, err := creds.Get()
 
 		require.NoError(t, err)
@@ -145,13 +146,15 @@ func TestMinioCredentials(t *testing.T) {
 	})
 
 	t.Run("Chain", func(t *testing.T) {
-		cfg := setting.MinioStorageConfig{}
+		cfg := setting.MinioStorageConfig{
+			IamEndpoint: FakeEndpoint,
+		}
 
 		t.Run("EnvMinio", func(t *testing.T) {
 			t.Setenv("MINIO_ACCESS_KEY", ExpectedAccessKey+"Minio")
 			t.Setenv("MINIO_SECRET_KEY", ExpectedSecretAccessKey+"Minio")
 
-			creds := buildMinioCredentials(cfg, FakeEndpoint)
+			creds := buildMinioCredentials(cfg)
 			v, err := creds.Get()
 
 			require.NoError(t, err)
@@ -163,7 +166,7 @@ func TestMinioCredentials(t *testing.T) {
 			t.Setenv("AWS_ACCESS_KEY", ExpectedAccessKey+"AWS")
 			t.Setenv("AWS_SECRET_KEY", ExpectedSecretAccessKey+"AWS")
 
-			creds := buildMinioCredentials(cfg, FakeEndpoint)
+			creds := buildMinioCredentials(cfg)
 			v, err := creds.Get()
 
 			require.NoError(t, err)
@@ -176,7 +179,7 @@ func TestMinioCredentials(t *testing.T) {
 			// prevent loading any actual credentials files from the user
 			t.Setenv("AWS_SHARED_CREDENTIALS_FILE", "testdata/fake")
 
-			creds := buildMinioCredentials(cfg, FakeEndpoint)
+			creds := buildMinioCredentials(cfg)
 			v, err := creds.Get()
 
 			require.NoError(t, err)
@@ -189,7 +192,7 @@ func TestMinioCredentials(t *testing.T) {
 			t.Setenv("MINIO_SHARED_CREDENTIALS_FILE", "testdata/fake.json")
 			t.Setenv("AWS_SHARED_CREDENTIALS_FILE", "testdata/aws_credentials")
 
-			creds := buildMinioCredentials(cfg, FakeEndpoint)
+			creds := buildMinioCredentials(cfg)
 			v, err := creds.Get()
 
 			require.NoError(t, err)
@@ -215,7 +218,9 @@ func TestMinioCredentials(t *testing.T) {
 			defer server.Close()
 
 			// Use the provided EC2 Instance Metadata server
-			creds := buildMinioCredentials(cfg, server.URL)
+			creds := buildMinioCredentials(setting.MinioStorageConfig{
+				IamEndpoint: server.URL,
+			})
 			v, err := creds.Get()
 
 			require.NoError(t, err)

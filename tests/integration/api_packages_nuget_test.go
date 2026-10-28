@@ -378,7 +378,7 @@ AAAjQmxvYgAAAGm7ENm9SGxMtAFVvPUsPJTF6PbtAAAAAFcVogEJAAAAAQAAAA==`)
 
 					pb, err := packages.GetBlobByID(db.DefaultContext, pf.BlobID)
 					require.NoError(t, err)
-					assert.Equal(t, int64(616), pb.Size)
+					assert.Equal(t, int64(618), pb.Size)
 				case fmt.Sprintf("%s.nuspec", packageName):
 					assert.False(t, pf.IsLead)
 
@@ -785,6 +785,20 @@ AAAjQmxvYgAAAGm7ENm9SGxMtAFVvPUsPJTF6PbtAAAAAFcVogEJAAAAAQAAAA==`)
 
 			assert.Len(t, result.Versions, 1)
 			assert.Equal(t, packageVersion, result.Versions[0])
+		})
+
+		t.Run("validate token scope", func(t *testing.T) {
+			defer tests.PrintCurrentTest(t)()
+
+			req := NewRequest(t, "GET", fmt.Sprintf("%s/package/%s/index.json", url, packageName)).
+				AddTokenAuth(token)
+			MakeRequest(t, req, http.StatusOK)
+
+			// No write package access:
+			invalidScopeToken := getUserToken(t, user.Name, auth_model.AccessTokenScopeWriteRepository)
+			req = NewRequest(t, "GET", fmt.Sprintf("%s/package/%s/index.json", url, packageName)).
+				AddTokenAuth(invalidScopeToken)
+			MakeRequest(t, req, http.StatusUnauthorized)
 		})
 	})
 

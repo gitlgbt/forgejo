@@ -1274,6 +1274,10 @@ table th[data-sortt-desc] .svg {
   vertical-align: middle !important;
 }
 
+.ellipsis-button:focus-visible {
+  outline: 1.5px dotted var(--color-text);
+}
+
 .truncated-item-name {
   line-height: 2;
   white-space: nowrap;

@@ -23,7 +23,6 @@ var (
 	// Security settings
 	InstallLock                        bool
 	SecretKey                          string
-	InternalToken                      string // internal access token
 	LogInRememberDays                  int
 	GlobalTwoFactorRequirement         TwoFactorRequirementType
 	CookieRememberName                 string
@@ -174,31 +173,32 @@ func loadAsymmetricSigningKeyPath(sec ConfigSection, pfx, defaultFile string) *s
 }
 
 type (
-	checkFunc   func(rootCfg ConfigProvider, cfgSection, pfx string) error
+	checkFunc func(rootCfg ConfigProvider, cfgSection, pfx string) error
+	checkSpec struct {
+		algCheck      func(algorithm string) bool
+		validAlgs     *[]string
+		forbiddenCfgs []string
+	}
 	checkKeyCfg struct {
 		signing      checkFunc
 		verification checkFunc
 	}
 )
 
-func checkSigningOnlyAsymmetric(rootCfg ConfigProvider, cfgSection, pfx string) error {
+func checkSigningSpec(rootCfg ConfigProvider, cfgSection, pfx string, cspec checkSpec) error {
 	sec := rootCfg.Section(cfgSection)
 	cfgAlg := pfx + "SIGNING_ALGORITHM"
 
 	if sec.HasKey(cfgAlg) {
 		alg := sec.Key(cfgAlg).String()
-		if !jwtx.IsValidAsymmetricAlgorithm(alg) {
+		if !cspec.algCheck(alg) {
 			return fmt.Errorf("Unexpected algorithm: %s = %s, needs to be one of %v",
-				cfgAlg, alg, jwtx.ValidAsymmetricAlgorithms)
+				cfgAlg, alg, *cspec.validAlgs)
 		}
 	}
 
-	noCfg := []string{
-		pfx + "SECRET_URI",
-		pfx + "SECRET",
-	}
-
-	for _, cfg := range noCfg {
+	for _, cfg := range cspec.forbiddenCfgs {
+		cfg = pfx + cfg
 		if sec.HasKey(cfg) {
 			return fmt.Errorf("Invalid config key: %s - must be removed", cfg)
 		}
@@ -207,7 +207,7 @@ func checkSigningOnlyAsymmetric(rootCfg ConfigProvider, cfgSection, pfx string) 
 	return nil
 }
 
-func checkValidationOnlyAsymmetric(rootCfg ConfigProvider, cfgSection, pfx string) error {
+func checkValidationSpec(rootCfg ConfigProvider, cfgSection, pfx string, cspec checkSpec) error {
 	sec := rootCfg.Section(cfgSection)
 	cfg := pfx + "KEYS_ACCEPTED"
 
@@ -222,18 +222,83 @@ func checkValidationOnlyAsymmetric(rootCfg ConfigProvider, cfgSection, pfx strin
 			continue
 		}
 
-		if !jwtx.IsValidAsymmetricAlgorithm(algo) {
+		if !cspec.algCheck(algo) {
 			return fmt.Errorf("Unexpected algorithm: %s = %s, needs to be one of %v",
-				cfg, algo, jwtx.ValidAsymmetricAlgorithms)
+				cfg, algo, *cspec.validAlgs)
 		}
 	}
 	return nil
+}
+
+////////////////
+// onlyAsymmetric(): Allow only asymmetric algorithms and their config
+
+var specAsymmetric = checkSpec{
+	jwtx.IsValidAsymmetricAlgorithm,
+	&jwtx.ValidAsymmetricAlgorithms,
+	[]string{"SECRET_URI", "SECRET"},
+}
+
+func checkSigningOnlyAsymmetric(rootCfg ConfigProvider, cfgSection, pfx string) error {
+	return checkSigningSpec(rootCfg, cfgSection, pfx, specAsymmetric)
+}
+
+func checkValidationOnlyAsymmetric(rootCfg ConfigProvider, cfgSection, pfx string) error {
+	return checkValidationSpec(rootCfg, cfgSection, pfx, specAsymmetric)
 }
 
 func onlyAsymmetric() checkKeyCfg {
 	return checkKeyCfg{
 		signing:      checkSigningOnlyAsymmetric,
 		verification: checkValidationOnlyAsymmetric,
+	}
+}
+
+////////////////
+// onlySymmetric(): Allow only symmetric algorithms and their config
+
+var specSymmetric = checkSpec{
+	jwtx.IsValidSymmetricAlgorithm,
+	&jwtx.ValidSymmetricAlgorighms,
+	[]string{"SIGNING_PRIVATE_KEY_FILE"},
+}
+
+func checkSigningOnlySymmetric(rootCfg ConfigProvider, cfgSection, pfx string) error {
+	return checkSigningSpec(rootCfg, cfgSection, pfx, specSymmetric)
+}
+
+func checkValidationOnlySymmetric(rootCfg ConfigProvider, cfgSection, pfx string) error {
+	return checkValidationSpec(rootCfg, cfgSection, pfx, specSymmetric)
+}
+
+func onlySymmetric() checkKeyCfg {
+	return checkKeyCfg{
+		signing:      checkSigningOnlySymmetric,
+		verification: checkValidationOnlySymmetric,
+	}
+}
+
+////////////////
+// onlyHS256(): Allow only HS256
+
+var specHS256 = checkSpec{
+	func(alg string) bool { return (alg == "HS256") },
+	&[]string{"HS256"},
+	[]string{"SIGNING_PRIVATE_KEY_FILE"},
+}
+
+func checkSigningOnlyHS256(rootCfg ConfigProvider, cfgSection, pfx string) error {
+	return checkSigningSpec(rootCfg, cfgSection, pfx, specHS256)
+}
+
+func checkValidationOnlyHS256(rootCfg ConfigProvider, cfgSection, pfx string) error {
+	return checkValidationSpec(rootCfg, cfgSection, pfx, specHS256)
+}
+
+func onlyHS256() checkKeyCfg {
+	return checkKeyCfg{
+		signing:      checkSigningOnlyHS256,
+		verification: checkValidationOnlyHS256,
 	}
 }
 
@@ -411,25 +476,6 @@ func loadKeyCfg(rootCfg ConfigProvider, cfgSection, pfx, defaultAlg, defaultPriv
 	return nil, err
 }
 
-// generateSaveInternalToken generates and saves the internal token to app.ini
-func generateSaveInternalToken(rootCfg ConfigProvider) {
-	token, err := generate.NewInternalToken()
-	if err != nil {
-		log.Fatal("Error generate internal token: %v", err)
-	}
-
-	InternalToken = token
-	saveCfg, err := rootCfg.PrepareSaving()
-	if err != nil {
-		log.Fatal("Error saving internal token: %v", err)
-	}
-	rootCfg.Section("security").Key("INTERNAL_TOKEN").SetValue(token)
-	saveCfg.Section("security").Key("INTERNAL_TOKEN").SetValue(token)
-	if err = saveCfg.Save(); err != nil {
-		log.Fatal("Error saving internal token: %v", err)
-	}
-}
-
 func loadSecurityFrom(rootCfg ConfigProvider) {
 	sec := rootCfg.Section("security")
 	InstallLock = HasInstallLock(rootCfg)
@@ -472,13 +518,6 @@ func loadSecurityFrom(rootCfg ConfigProvider) {
 	PasswordCheckPwn = sec.Key("PASSWORD_CHECK_PWN").MustBool(false)
 	SuccessfulTokensCacheSize = sec.Key("SUCCESSFUL_TOKENS_CACHE_SIZE").MustInt(20)
 
-	InternalToken = loadSecret(sec, "INTERNAL_TOKEN_URI", "INTERNAL_TOKEN")
-	if InstallLock && InternalToken == "" {
-		// if Gitea has been installed but the InternalToken hasn't been generated (upgrade from an old release), we should generate
-		// some users do cluster deployment, they still depend on this auto-generating behavior.
-		generateSaveInternalToken(rootCfg)
-	}
-
 	cfgdata := sec.Key("PASSWORD_COMPLEXITY").Strings(",")
 	if len(cfgdata) == 0 {
 		cfgdata = []string{"off"}
@@ -499,6 +538,10 @@ func loadSecurityFrom(rootCfg ConfigProvider) {
 	// warn if the setting is set to false explicitly
 	if sectionHasDisableQueryAuthToken && !DisableQueryAuthToken {
 		log.Warn("Enabling Query API Auth tokens is not recommended. DISABLE_QUERY_AUTH_TOKEN will be removed in Forgejo v13.0.0.")
+	}
+
+	if sec.HasKey("INTERNAL_TOKEN") || sec.HasKey("INTERNAL_TOKEN_URI") {
+		log.Error("INTERNAL_TOKEN and INTERNAL_TOKEN_URI have been deprecated. Internal communication now happens over a UNIX socket, see the [server].INTERNAL_LISTENER_PATH setting.")
 	}
 }
 

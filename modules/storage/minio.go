@@ -103,7 +103,7 @@ func NewMinioStorage(ctx context.Context, cfg *setting.Storage) (ObjectStorage, 
 	log.Info("Creating Minio storage at %s:%s with base path %s", config.Endpoint, config.Bucket, config.BasePath)
 
 	minioClient, err := minio.New(config.Endpoint, &minio.Options{
-		Creds:  buildMinioCredentials(config, credentials.DefaultIAMRoleEndpoint),
+		Creds:  buildMinioCredentials(config),
 		Secure: config.UseSSL,
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.InsecureSkipVerify},
@@ -173,7 +173,7 @@ func (m *MinioStorage) buildMinioDirPrefix(p string) string {
 	return p
 }
 
-func buildMinioCredentials(config setting.MinioStorageConfig, iamEndpoint string) *credentials.Credentials {
+func buildMinioCredentials(config setting.MinioStorageConfig) *credentials.Credentials {
 	// If static credentials are provided, use those
 	if config.AccessKeyID != "" {
 		return credentials.NewStaticV4(config.AccessKeyID, config.SecretAccessKey, "")
@@ -193,7 +193,8 @@ func buildMinioCredentials(config setting.MinioStorageConfig, iamEndpoint string
 		&credentials.FileAWSCredentials{},
 		// read IAM role from EC2 metadata endpoint if available
 		&credentials.IAM{
-			Endpoint: iamEndpoint,
+			// An empty endpoint lets the IAM provider resolve it internally.
+			Endpoint: config.IamEndpoint,
 			Client: &http.Client{
 				Transport: http.DefaultTransport,
 			},

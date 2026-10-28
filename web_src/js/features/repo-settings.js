@@ -1,18 +1,18 @@
 import $ from 'jquery';
 import {minimatch} from 'minimatch';
-import {onInputDebounce, toggleElem} from '../utils/dom.js';
-import {POST} from '../modules/fetch.js';
+import {onInputDebounce, toggleElem} from '../utils/dom.ts';
+import {POST} from '../modules/fetch.ts';
 import {createCodemirror} from './codemirror.ts';
 
 const {appSubUrl, i18n} = window.config;
 
 export function initRepoSettingsCollaboration() {
   // Change collaborator access mode
-  for (const dropdownEl of document.querySelectorAll('.page-content.repository details.dropdown.access-mode')) {
+  for (const dropdownEl of document.querySelectorAll('.page-content.repository .dialog-dropdown.access-mode')) {
     const url = dropdownEl.getAttribute('data-url');
     const uid = dropdownEl.getAttribute('data-uid');
     const textEl = dropdownEl.querySelector('.text');
-    for (const buttonEl of dropdownEl.querySelectorAll('button')) {
+    for (const buttonEl of dropdownEl.querySelectorAll('button[data-mode]')) {
       const mode = buttonEl.getAttribute('data-mode');
       buttonEl.addEventListener('click', async () => {
         dropdownEl.classList.add('is-loading');

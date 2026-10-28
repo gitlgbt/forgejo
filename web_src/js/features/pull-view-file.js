@@ -1,6 +1,6 @@
 import {diffTreeStore} from '../modules/stores.js';
 import {setFileFolding} from './file-fold.js';
-import {POST} from '../modules/fetch.js';
+import {POST} from '../modules/fetch.ts';
 
 const {pageData} = window.config;
 const prReview = pageData.prReview || {};

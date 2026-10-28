@@ -703,7 +703,7 @@ func RetrieveRepoReviewers(ctx *context.Context, repo *repo_model.Repository, is
 			posterID = 0
 		}
 
-		reviewers, err = repo_model.GetReviewers(ctx, repo, ctx.Doer.ID, posterID)
+		reviewers, err = repo_model.GetReviewers(ctx, repo, posterID)
 		if err != nil {
 			ctx.ServerError("GetReviewers", err)
 			return
@@ -1871,6 +1871,11 @@ func ViewIssue(ctx *context.Context) {
 				perm, err := access_model.GetUserRepoPermission(ctx, pull.HeadRepo, ctx.Doer)
 				if err != nil {
 					ctx.ServerError("GetUserRepoPermission", err)
+					return
+				}
+				// determine if the user viewing the pull request can edit the head branch (used to gate the "Apply suggestion" button)
+				if ctx.Data["HeadBranchIsEditable"], err = pull_service.CanEditHeadBranch(ctx, ctx.Doer, pull); err != nil {
+					ctx.ServerError("CanEditHeadBranch", err)
 					return
 				}
 				if perm.CanWrite(unit.TypeCode) {
@@ -3343,6 +3348,18 @@ func UpdateCommentContent(ctx *context.Context) {
 	newContent := ctx.FormString("content")
 	contentVersion := ctx.FormInt("content_version")
 
+	// a code comment may carry at most one suggestion
+	if comment.Type == issues_model.CommentTypeCode {
+		if err := pull_service.ValidateCodeCommentSuggestions(newContent); err != nil {
+			if errors.Is(err, pull_service.ErrMultipleSuggestions) {
+				ctx.JSONError(ctx.Tr("repo.issues.review.one_suggestion_per_comment"))
+				return
+			}
+			ctx.ServerError("ValidateCodeCommentSuggestions", err)
+			return
+		}
+	}
+
 	comment.Content = newContent
 	if err = issue_service.UpdateComment(ctx, comment, contentVersion, ctx.Doer, oldContent); err != nil {
 		if errors.Is(err, issues_model.ErrCommentAlreadyChanged) {
@@ -3379,10 +3396,34 @@ func UpdateCommentContent(ctx *context.Context) {
 		return
 	}
 
+	var suggestions template.HTML
+	if comment.Type == issues_model.CommentTypeCode {
+		editable, err := headBranchIsEditable(ctx, comment.Issue)
+		if err != nil {
+			ctx.ServerError("headBranchIsEditable", err)
+			return
+		}
+		root := map[string]any{
+			"HeadBranchIsEditable": editable,
+			"RepoLink":             ctx.Repo.RepoLink,
+			"Issue":                comment.Issue,
+		}
+		// the editor declares its context (Files tab vs Conversation); anything else => no batch button
+		batchMode := ctx.FormString("batch_mode")
+		if batchMode != "active" && batchMode != "disabled" {
+			batchMode = ""
+		}
+		if suggestions, err = ctx.RenderToHTML("repo/diff/suggestion_diffs", map[string]any{"comment": comment, "root": root, "batchMode": batchMode}); err != nil {
+			ctx.ServerError("RenderToHTML", err)
+			return
+		}
+	}
+
 	ctx.JSON(http.StatusOK, map[string]any{
 		"content":        content,
 		"contentVersion": comment.ContentVersion,
 		"attachments":    attachmentsHTML(ctx, comment.Attachments, comment.Content),
+		"suggestions":    suggestions,
 	})
 }
 

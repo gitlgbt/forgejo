@@ -1,7 +1,7 @@
 import {initMarkupContent} from '../markup/content.js';
 import {validateTextareaNonEmpty, initComboMarkdownEditor} from './comp/ComboMarkdownEditor.js';
 import {fomanticMobileScreen} from '../modules/fomantic.js';
-import {POST} from '../modules/fetch.js';
+import {POST} from '../modules/fetch.ts';
 
 async function initRepoWikiFormEditor() {
   const editArea = document.querySelector('.repository.wiki .combo-markdown-editor textarea');

@@ -34,7 +34,7 @@
 			<div class="message-wrapper">
 				{{RenderCommitMessageLinkSubject $.Context .Message $commitLink ($.Repository.ComposeMetas ctx)}}
 				{{if IsMultilineCommitMessage .Message}}
-					<button class="ui button js-toggle-commit-body ellipsis-button" aria-expanded="false">...</button>
+					<button class="ui button js-toggle-commit-body ellipsis-button" aria-expanded="false" aria-label="{{ctx.Locale.Tr "repo.toggle_full_commit_message"}}" data-tooltip-from-label>...</button>
 				{{end}}
 				<span class="ci-status">
 					{{template "repo/commit_statuses" dict "Status" .Status "Statuses" .Statuses}}
@@ -59,11 +59,11 @@
 				</button>
 			</div>
 
-			<details class="dropdown dir-rtl">
-				<summary class="border" aria-label="{{ctx.Locale.Tr "toggle_menu"}}">
+			<div class="dialog-dropdown">
+				<button class="opener border" aria-label="{{ctx.Locale.Tr "toggle_menu"}}" command="toggle-popover" commandfor="commit-{{.ID.String}}-dropdown">
 					{{svg "octicon-kebab-horizontal"}}
-				</summary>
-				<div class="content">
+				</button>
+				<dialog popover class="inline-flip" id="commit-{{.ID.String}}-dropdown">
 					<ul>
 						{{if $.FileName}}
 							<li>
@@ -84,8 +84,8 @@
 							</a>
 						</li>
 					</ul>
-				</div>
-			</details>
+				</dialog>
+			</div>
 		</div>
 
 		<div class="date">

@@ -17,6 +17,7 @@ import (
 	"forgejo.org/modules/git"
 	"forgejo.org/modules/gitrepo"
 	"forgejo.org/modules/log"
+	"forgejo.org/modules/markup/markdown"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
@@ -111,6 +112,17 @@ func ValidateCodeCommentLineRange(extraLinesCount int64) error {
 	}
 	if setting.UI.MaxCodeCommentLines > 0 && extraLinesCount+1 > int64(setting.UI.MaxCodeCommentLines) {
 		return fmt.Errorf("a code comment may span at most %d lines", setting.UI.MaxCodeCommentLines)
+	}
+	return nil
+}
+
+// ErrMultipleSuggestions is returned when a code comment carries more than one suggestion block.
+var ErrMultipleSuggestions = errors.New("a review comment may contain at most one suggestion")
+
+// ValidateCodeCommentSuggestions ensures a code comment carries at most one suggestion block
+func ValidateCodeCommentSuggestions(content string) error {
+	if len(markdown.ExtractSuggestions(content)) > 1 {
+		return ErrMultipleSuggestions
 	}
 	return nil
 }

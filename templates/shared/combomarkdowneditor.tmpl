@@ -30,6 +30,9 @@ Template Attributes:
 			<md-quote class="markdown-toolbar-button" data-tooltip-content="{{ctx.Locale.Tr "mde.buttons.quote.tooltip"}}">{{svg "octicon-quote"}}</md-quote>
 			<md-code class="markdown-toolbar-button" data-tooltip-content="{{ctx.Locale.Tr "mde.buttons.code.tooltip"}}">{{svg "octicon-code"}}</md-code>
 			<button type="button" class="markdown-toolbar-button show-modal" data-md-button data-md-action="new-link" data-tooltip-content="{{ctx.Locale.Tr "mde.buttons.link.tooltip"}}" data-md-ctrl-shortcut="k">{{svg "octicon-link"}}</button>
+			{{if .SuggestionButton}}
+				<button type="button" class="markdown-toolbar-button" data-md-button data-md-action="suggestion" data-tooltip-content="{{ctx.Locale.Tr "mde.buttons.suggestion.tooltip"}}">{{svg "octicon-diff"}}</button>
+			{{end}}
 		</div>
 		<div class="markdown-toolbar-group">
 			<md-unordered-list class="markdown-toolbar-button" data-tooltip-content="{{ctx.Locale.Tr "mde.buttons.list.unordered.tooltip"}}">{{svg "octicon-list-unordered"}}</md-unordered-list>
@@ -51,21 +54,30 @@ Template Attributes:
 		</div>
 	</markdown-toolbar>
 	<div class="ui tab active" data-tab-panel="markdown-writer">
-		<text-expander keys=": @ # !" multiword="# !" suffix="">
-			<textarea class="markdown-text-editor js-quick-submit"
+		{{if .DisableTextExpander}}
+			<textarea class="markdown-text-editor"
 				{{- if .TextareaName}} name="{{.TextareaName}}"{{end -}}
 				{{if .TextareaPlaceholder}} placeholder="{{.TextareaPlaceholder}}"{{end -}}
 				{{if .TextareaAriaLabel}} aria-label="{{.TextareaAriaLabel}}"{{end -}}
 				{{if .DisableAutosize}} data-disable-autosize="{{.DisableAutosize}}"{{end -}}
 			>{{.TextareaContent}}</textarea>
-		</text-expander>
+		{{else}}
+			<text-expander keys=": @ # !" multiword="# !" suffix="">
+				<textarea class="markdown-text-editor js-quick-submit"
+					{{- if .TextareaName}} name="{{.TextareaName}}"{{end -}}
+					{{if .TextareaPlaceholder}} placeholder="{{.TextareaPlaceholder}}"{{end -}}
+					{{if .TextareaAriaLabel}} aria-label="{{.TextareaAriaLabel}}"{{end -}}
+					{{if .DisableAutosize}} data-disable-autosize="{{.DisableAutosize}}"{{end -}}
+				>{{.TextareaContent}}</textarea>
+			</text-expander>
+		{{end}}
 	</div>
 	<div class="ui tab markup" data-tab-panel="markdown-previewer">
 		{{ctx.Locale.Tr "loading"}}
 	</div>
 
 	{{/* TODO: Add closedby="any" here when removing initModalClose */}}
-	<dialog data-modal-name="new-markdown-table">
+	<dialog class="modal" data-modal-name="new-markdown-table">
 		<article>
 			<header>{{ctx.Locale.Tr "editor.table_modal.header"}}</header>
 
@@ -94,7 +106,7 @@ Template Attributes:
 	</dialog>
 
 	{{/* TODO: Add closedby="any" here when removing initModalClose */}}
-	<dialog data-modal-name="new-markdown-link">
+	<dialog class="modal" data-modal-name="new-markdown-link">
 		<article>
 			<header>{{ctx.Locale.Tr "editor.link_modal.header"}}</header>
 

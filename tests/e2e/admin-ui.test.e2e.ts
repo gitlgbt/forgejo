@@ -9,31 +9,60 @@
 import {expect} from '@playwright/test';
 import {test} from './utils_e2e.ts';
 import {screenshot} from './shared/screenshots.ts';
+import {testModalClosure} from './shared/modals.ts';
 
 test.use({user: 'user1'});
 
-test('Admin notices modal', async ({page}) => {
-  const response = await page.goto('/admin/notices');
-  expect(response?.status()).toBe(200);
+for (const run of [
+  {title: 'JS off', useJs: false},
+  {title: 'JS on', useJs: true},
+]) {
+  test.describe(`Admin notices modal (${run.title})`, () => {
+    test.use({javaScriptEnabled: run.useJs});
 
-  await page.getByText('description1').click();
-  await expect(page.locator('#detail-modal .content')).toHaveText('description1');
-  await screenshot(page, page.locator('#detail-modal'));
-  await page.getByText('Cancel').click();
-  await expect(page.locator('#change-email-modal')).toBeHidden();
+    test.beforeEach(async ({page}) => {
+      const response = await page.goto('/admin/notices');
+      expect(response?.status()).toBe(200);
+    });
 
-  await page.getByText('description2').click();
-  await expect(page.locator('#detail-modal .content')).toHaveText('description2');
-  await screenshot(page, page.locator('#detail-modal'));
-  await page.getByText('Cancel').click();
-  await expect(page.locator('#change-email-modal')).toBeHidden();
+    test('Correct description for each item', async ({page}) => {
+      const changeEmailModal = page.locator('#change-email-modal');
+      await expect(changeEmailModal).toBeHidden();
+      const modalDetailContent = page.locator('.detail-modal:modal .content');
+      await expect(modalDetailContent).toBeHidden();
 
-  await page.getByText('description3').click();
-  await expect(page.locator('#detail-modal .content')).toHaveText('description3');
-  await screenshot(page, page.locator('#detail-modal'));
-  await page.getByText('Cancel').click();
-  await expect(page.locator('#change-email-modal')).toBeHidden();
-});
+      await page.getByRole('button', {name: 'View details for notice 1'}).click();
+      await expect(modalDetailContent).toBeVisible();
+      await expect(modalDetailContent).toHaveText('description1');
+      await screenshot(page, page.locator('.detail-modal:modal'));
+      await page.getByRole('button', {name: 'Close'}).click();
+      await expect(modalDetailContent).toBeHidden();
+      await expect(changeEmailModal).toBeHidden();
+
+      await page.getByRole('button', {name: 'View details for notice 2'}).click();
+      await expect(modalDetailContent).toBeVisible();
+      await expect(modalDetailContent).toHaveText('description2');
+      await screenshot(page, page.locator('.detail-modal:modal'));
+      await page.getByRole('button', {name: 'Close'}).click();
+      await expect(modalDetailContent).toBeHidden();
+      await expect(changeEmailModal).toBeHidden();
+
+      await page.getByRole('button', {name: 'View details for notice 3'}).click();
+      await expect(modalDetailContent).toBeVisible();
+      await expect(modalDetailContent).toHaveText('description3');
+      await screenshot(page, page.locator('.detail-modal:modal'));
+      await page.getByRole('button', {name: 'Close'}).click();
+      await expect(modalDetailContent).toBeHidden();
+      await expect(changeEmailModal).toBeHidden();
+    });
+
+    testModalClosure(
+      (page) => page.locator('.detail-modal:modal'),
+      (page) => page.getByRole('button', {name: 'View details for notice 1'}),
+      'Close',
+    );
+  });
+}
 
 test('Admin email list', async ({page}) => {
   const response = await page.goto('/admin/emails');
@@ -97,7 +126,7 @@ test('Admin: delete a user from their public profile', async ({page, request}) =
   // Check that modal appears after clicking
   await expect(modal).toBeHidden();
   await expect(okButton).toBeHidden();
-  await page.locator('#profile-avatar-card .dropdown').click();
+  await page.locator('#profile-avatar-card .dialog-dropdown').click();
   await page.locator('[data-modal="#delete-user-modal"]').click();
   await expect(modal).toBeVisible();
   await expect(okButton).toBeVisible();

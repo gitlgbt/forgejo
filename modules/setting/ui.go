@@ -30,6 +30,8 @@ var UI = struct {
 	MaxCodeCommentLines   int
 	ReactionMaxUserNum    int
 	MaxDisplayFileSize    int64
+	FontPreviewEnabled    bool
+	FontPreviewPangram    string
 	ShowUserEmail         bool
 	DefaultShowFullName   bool
 	DefaultTheme          string

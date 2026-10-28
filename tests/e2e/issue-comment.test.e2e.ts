@@ -6,6 +6,7 @@
 // web_src/js/features/repo-**
 // templates/repo/issue/view_content/*
 // routers/web/repo/issue_content_history.go
+// web_src/js/vendor/jquery.are-you-sure.js
 // @watch end
 
 import {expect} from '@playwright/test';
@@ -69,12 +70,113 @@ for (const run of [
         // Not possible w/o JS ATM
         await page.locator('.comment').filter({hasText: commentContent}).getByLabel('Comment menu').click();
         page.on('dialog', (dialog) => dialog.accept());
-        await page.locator('.comment').filter({hasText: commentContent}).locator('details.dropdown .content button[data-url$="/delete"]').click();
+        await page.locator('.comment').filter({hasText: commentContent}).locator('.dialog-dropdown dialog button[data-url$="/delete"]').click();
         await expect(page.locator('.comment').filter({hasText: commentContent})).toHaveCount(0);
       }
     });
   });
 }
+
+test.describe('Reload protection', () => {
+  test('choose to stay', async ({page}) => {
+    await page.goto('/user2/repo1/issues/1', {waitUntil: 'load'});
+
+    let didShowDialog = false;
+    page.on('dialog', async (dialog) => {
+      expect(dialog.type()).toBe('beforeunload');
+      await dialog.dismiss(); // "stay on page"
+      didShowDialog = true;
+    });
+
+    let didReload = false;
+    page.on('domcontentloaded', () => {
+      // 'domcontentloaded' happens before 'load', so this fn only happens after a ReLoad!
+      didReload = true;
+    });
+
+    const replyInput = page.getByRole('textbox', {name: 'Leave a comment'});
+    await expect(replyInput).toBeEmpty();
+    await replyInput.pressSequentially('i can\'t believe it\'s not jQuery!'); // .fill() doesn't count as user interaction on firefox, required for beforeunload to fire
+
+    await page.evaluate(() => window.location.reload()); // navigation won't actually occur
+    await expect(() => expect(didShowDialog).toBe(true)).toPass();
+    await expect(replyInput).toHaveValue('i can\'t believe it\'s not jQuery!'); // text content remains (we didn't reload!)
+    expect(didReload).toBe(false); // doing this last, to avoid race conditions
+  });
+
+  test('choose to leave', async ({page, browserName}) => {
+    await page.goto('/user2/repo1/issues/1', {waitUntil: 'load'});
+
+    let didShowDialog = false;
+    page.on('dialog', async (dialog) => {
+      expect(dialog.type()).toBe('beforeunload');
+      await dialog.accept(); // "I'm sure. Reload!"
+      didShowDialog = true;
+    });
+
+    const replyInput = page.getByRole('textbox', {name: 'Leave a comment'});
+    await expect(replyInput).toBeEmpty();
+    await replyInput.pressSequentially('i can\'t believe it\'s not jQuery!');
+
+    await page.reload({waitUntil: 'domcontentloaded'});
+    await expect(() => expect(didShowDialog).toBe(true)).toPass();
+    if (browserName === 'firefox') {
+      await expect(replyInput).toHaveValue('i can\'t believe it\'s not jQuery!'); // text is restored! (firefox-only behavior)
+    } else {
+      await expect(replyInput).toBeEmpty(); // text is gone!
+    }
+  });
+
+  test('choose to stay, remove all text, then leave without bother', async ({page}) => {
+    await page.goto('/user2/repo1/issues/1', {waitUntil: 'load'});
+
+    let didShowDialog = false;
+    page.on('dialog', async (dialog) => {
+      expect(dialog.type()).toBe('beforeunload');
+      await dialog.dismiss(); // "stay on page"
+      didShowDialog = true;
+    });
+
+    let didReload = false;
+    page.on('domcontentloaded', () => {
+      didReload = true;
+    });
+
+    const replyInput = page.getByRole('textbox', {name: 'Leave a comment'});
+    await expect(replyInput).toBeEmpty();
+    await replyInput.pressSequentially('i can\'t believe it\'s not jQuery!');
+
+    await page.evaluate(() => window.location.reload()); // navigation won't actually occur
+    await expect(() => expect(didShowDialog).toBe(true)).toPass();
+    didShowDialog = false;
+    await expect(replyInput).toHaveValue('i can\'t believe it\'s not jQuery!'); // text content remains (we didn't reload!)
+    expect(didReload).toBe(false);
+
+    // clear the text field (interactively, so that beforeunload runs)
+    for (const _ of 'i can\'t believe it\'s not jQuery!') {
+      await replyInput.press('Backspace');
+    }
+
+    await page.reload({waitUntil: 'domcontentloaded'});
+    expect(didShowDialog).toBe(false);
+    await expect(() => expect(didReload).toBe(true)).toPass();
+    await expect(replyInput).toBeEmpty(); // text gone! (reload didn't resurrect it)
+  });
+
+  test('no edits, leave without bother', async ({page}) => {
+    await page.goto('/user2/repo1/issues/1', {waitUntil: 'load'});
+    page.on('dialog', () => {
+      // wait until timeout :)
+    });
+
+    const replyInput = page.getByRole('textbox', {name: 'Leave a comment'});
+    await expect(replyInput).toBeEmpty();
+
+    await page.locator('body').click(); // some interaction...
+    await page.reload({waitUntil: 'domcontentloaded'}); // this would freeze if the page is waiting on an "Are you sure?" dialog
+    await expect(replyInput).toBeEmpty();
+  });
+});
 
 test('Menu accessibility', async ({page}) => {
   await page.goto('/user2/repo1/issues/1');
@@ -174,8 +276,8 @@ test('Always focus edit tab first on edit', async ({page}) => {
   const response = await page.goto('/user2/repo1/issues/1');
   expect(response?.status()).toBe(200);
 
-  const opener = page.locator('#issue-1 .comment-container details.dropdown summary');
-  const editButton = page.locator('#issue-1 .comment-container details.dropdown .content .edit-content');
+  const opener = page.locator('#issue-1 .comment-container .dialog-dropdown .opener');
+  const editButton = page.locator('#issue-1 .comment-container .dialog-dropdown dialog .edit-content');
 
   // Switch to preview tab and save
   await opener.click();
@@ -200,8 +302,8 @@ test('Reset content of comment edit field on cancel', async ({page}) => {
   const response = await page.goto('/user2/repo1/issues/1');
   expect(response?.status()).toBe(200);
 
-  const opener = page.locator('#issue-1 .comment-container details.dropdown summary');
-  const editButton = page.locator('#issue-1 .comment-container details.dropdown .content .edit-content');
+  const opener = page.locator('#issue-1 .comment-container .dialog-dropdown .opener');
+  const editButton = page.locator('#issue-1 .comment-container .dialog-dropdown dialog .edit-content');
   const editorTextarea = page.locator('[id="_combo_markdown_editor_1"]');
 
   // Change the content of the edit field
@@ -224,7 +326,7 @@ test('Quote reply', async ({page}, workerInfo) => {
   const response = await page.goto('/user2/repo1/issues/1');
   expect(response?.status()).toBe(200);
 
-  const opener = page.locator('#issuecomment-1001 .comment-container details.dropdown summary');
+  const opener = page.locator('#issuecomment-1001 .comment-container .dialog-dropdown .opener');
   const editorTextarea = page.locator('textarea.markdown-text-editor');
 
   // Full quote.
@@ -303,7 +405,7 @@ test('Pull quote reply', async ({page}, workerInfo) => {
   const editorTextarea = page.locator('form.comment-form textarea.markdown-text-editor');
 
   // Full quote with no reply handler being open.
-  await page.click('.comment-code-cloud details.dropdown summary');
+  await page.click('.comment-code-cloud .dialog-dropdown .opener');
   await page.click('.comment-code-cloud .quote-reply');
 
   await expect(editorTextarea).toHaveValue('@user2 wrote in http://localhost:3003/user2/commitsonpr/pulls/1/files#issuecomment-1002:\n\n' +
@@ -377,10 +479,12 @@ test.describe('Comment history', () => {
 
     // Make a change.
     const editorTextarea = page.locator('[id="_combo_markdown_editor_1"]');
-    await page.click('.comment-container details.dropdown summary');
-    await page.click('.comment-container details.dropdown .content .edit-content');
+    await page.click('.comment-container .dialog-dropdown .opener');
+    await page.click('.comment-container .dialog-dropdown dialog .edit-content');
     await editorTextarea.fill(dynamic_id());
     await page.click('.comment-container .edit .save');
+    // Programmatically requesting page.reload() is too quick and can result in edit save request being aborted, especially on Firefox. Wait for JS to update attribute with contentVersion value from server reply
+    await expect(page.locator('.edit-content-zone:has([id="_combo_markdown_editor_1"])')).toHaveAttribute('data-content-version', '1');
 
     // Reload the page so the edited bit is rendered.
     await page.reload();
@@ -481,4 +585,25 @@ test.describe('Markdown rendered on preview', () => {
     const link = page.locator(linkSelector);
     await expect(link).toHaveText('@limited_org');
   });
+});
+
+test('Reference in a new issue', async ({page}) => {
+  await page.goto('/user2/repo2/issues/1');
+
+  const dropdownWrap = page.locator('.first.comment .comment-header .dialog-dropdown');
+  const dropdownContent = dropdownWrap.locator('dialog');
+  const modal = page.locator('#reference-issue-modal');
+
+  // Open comment actions
+  await dropdownWrap.locator('.opener').click();
+  await expect(dropdownContent).toBeVisible();
+
+  // Clicking "Reference in a new issue" opens dialog and closes dropdown
+  await dropdownContent.locator('.reference-issue').click();
+  await expect(modal).toBeVisible();
+  await expect(dropdownContent).toBeHidden();
+
+  // Pressing Escape closes the modal
+  await page.keyboard.press('Escape');
+  await expect(modal).toBeHidden();
 });

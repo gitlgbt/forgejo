@@ -2,14 +2,14 @@ import '@github/markdown-toolbar-element';
 import '@github/text-expander-element';
 import $ from 'jquery';
 import {attachTribute} from '../tribute.js';
-import {autosize, hideElem, isElemVisible, replaceTextareaSelection, showElem} from '../../utils/dom.js';
+import {autosize, hideElem, isElemVisible, replaceTextareaSelection, showElem} from '../../utils/dom.ts';
 import {initEasyMDEPaste, initTextareaPaste} from './Paste.js';
 import {handleGlobalEnterQuickSubmit} from './QuickSubmit.js';
 import {renderPreviewPanelContent} from '../repo-editor.js';
 import {easyMDEToolbarActions} from './EasyMDEToolbarActions.js';
 import {initTextExpander} from './TextExpander.js';
-import {showErrorToast, showHintToast} from '../../modules/toast.js';
-import {POST} from '../../modules/fetch.js';
+import {showErrorToast, showHintToast} from '../../modules/toast.ts';
+import {POST} from '../../modules/fetch.ts';
 import {initTab} from '../../modules/tab.ts';
 
 /**

@@ -1,7 +1,7 @@
 import {clippie} from 'clippie';
 import {showTemporaryTooltip} from '../modules/tippy.js';
-import {convertImage} from '../utils.js';
-import {GET} from '../modules/fetch.js';
+import {convertImage} from '../utils.ts';
+import {GET} from '../modules/fetch.ts';
 
 const {i18n} = window.config;
 

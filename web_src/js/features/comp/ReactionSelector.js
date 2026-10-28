@@ -1,5 +1,5 @@
 import $ from 'jquery';
-import {POST} from '../../modules/fetch.js';
+import {POST} from '../../modules/fetch.ts';
 
 export function initCompReactionSelector($parent) {
   $parent.find(`.select-reaction .item.reaction, .comment-reaction-button`).on('click', async function (e) {

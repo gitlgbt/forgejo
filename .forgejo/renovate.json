@@ -9,7 +9,8 @@
   "baseBranchPatterns": [
     "$default",
     "/^v15\\.\\d+/forgejo$/",
-    "/^v16\\.\\d+/forgejo$/"
+    "/^v16\\.\\d+/forgejo$/",
+    "/^v17\\.\\d+/forgejo$/"
   ],
   "postUpdateOptions": ["gomodTidy", "gomodUpdateImportPaths", "npmDedupe"],
   "prConcurrentLimit": 10,
@@ -102,7 +103,11 @@
       "matchDatasources": ["docker"],
       "matchPackageNames": ["data.forgejo.org/renovate/renovate"],
       "reviewers": ["viceice"],
-      "addLabels": ["forgejo/ci"]
+      "addLabels": ["forgejo/ci"],
+      "prBodyNotes": [
+        "> [!NOTE]\n> Updates the Renovate version used by `make lint-renovate`. This does **not** affect Renovate itself running on this repository."
+      ],
+      "extends": ["schedule:quarterly"]
     },
     {
       "description": "Disable renovate self-updates for release branches",

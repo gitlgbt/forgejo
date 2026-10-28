@@ -230,6 +230,11 @@ func getFileReader(ctx gocontext.Context, repoID int64, blob *git.Blob) ([]byte,
 	n, _ := util.ReadAtMost(dataRc, buf)
 	buf = buf[:n]
 
+	// FIXME: For the /render/ endpoint and other places, if the LFS server is
+	// disabled, we should declare the content type to be merely text (as we'd be
+	// showing the pointer), otherwise the rendering is different depending on
+	// e.g. whether the LFS pointer file has the file extension of an image or a
+	// Markdown file.
 	st := typesniffer.DetectContentType(buf, blob.Name())
 	isTextFile := st.IsText()
 
@@ -238,8 +243,8 @@ func getFileReader(ctx gocontext.Context, repoID int64, blob *git.Blob) ([]byte,
 		return buf, dataRc, &fileInfo{isTextFile, false, blob.Size(), nil, st}, nil
 	}
 
-	pointer, _ := lfs.ReadPointerFromBuffer(buf)
-	if !pointer.IsValid() { // fallback to plain file
+	pointer, err := lfs.ReadPointerFromBuffer(buf)
+	if err != nil { // fallback to plain file
 		return buf, dataRc, &fileInfo{isTextFile, false, blob.Size(), nil, st}, nil
 	}
 
@@ -466,7 +471,10 @@ func renderFile(ctx *context.Context, entry *git.TreeEntry) {
 	isDisplayingSource := ctx.FormString("display") == "source"
 	isDisplayingRendered := !isDisplayingSource
 
-	if fInfo.isLFSFile {
+	// We override the link that uses the "/raw" endpoint; which just shows the
+	// contents of the pointer and not the contents of the Git LFS file that the
+	// pointer points at.
+	if fInfo.isLFSFile && setting.LFS.StartServer {
 		ctx.Data["RawFileLink"] = ctx.Repo.RepoLink + "/media/" + ctx.Repo.BranchNameSubURL() + "/" + util.PathEscapeSegments(ctx.Repo.TreePath)
 	}
 
@@ -655,6 +663,10 @@ func renderFile(ctx *context.Context, entry *git.TreeEntry) {
 		case fInfo.st.Is3MF():
 			ctx.Data["Is3MFFile"] = true
 		}
+	case fInfo.st.IsFont() && setting.UI.FontPreviewEnabled:
+		ctx.Data["IsFontFile"] = true
+		ctx.Data["FontPreviewPangram"] = setting.UI.FontPreviewPangram
+		ctx.Data["FontPreviewSizes"] = []int{12, 18, 24, 36}
 	case fInfo.st.IsImage() && (setting.UI.SVG.Enabled || !fInfo.st.IsSvgImage()):
 		ctx.Data["IsImageFile"] = true
 		ctx.Data["CanCopyContent"] = true
@@ -1077,8 +1089,23 @@ func renderHomeCode(ctx *context.Context) {
 		link := ctx.Link
 		if ctx.Req.URL.RawQuery != "" {
 			link += "?" + ctx.Req.URL.RawQuery
+			ctx.Redirect(link)
+			return
 		}
-		ctx.Redirect(link)
+
+		var tags []*git.Tag
+		var totalTags int
+		if tags, totalTags, err = ctx.Repo.GitRepo.GetTagInfos(0, 1); err != nil {
+			ctx.ServerError("GetTagInfos", err)
+			return
+		}
+		if totalTags == 0 {
+			ctx.NotFound("GetTagInfos: no tags in the repository", err)
+			return
+		}
+
+		log.Trace("Tag with latest commit: \"%s\" - redirecting", tags[0].Name)
+		ctx.Redirect(ctx.Link + "/src/tag/" + tags[0].Name)
 		return
 	}
 

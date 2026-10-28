@@ -1,7 +1,7 @@
-import {svg} from '../svg.js';
-import {toggleElem} from '../utils/dom.js';
-import {pathEscapeSegments} from '../utils/url.js';
-import {GET} from '../modules/fetch.js';
+import {svg} from '../svg.ts';
+import {toggleElem} from '../utils/dom.ts';
+import {pathEscapeSegments} from '../utils/url.ts';
+import {GET} from '../modules/fetch.ts';
 
 const threshold = 50;
 let files = [];

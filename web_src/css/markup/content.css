@@ -411,7 +411,7 @@
   padding: 0;
   margin: 0;
   font-size: 100%;
-  white-space: pre-wrap;
+  white-space: pre;
   word-break: break-all;
   overflow-wrap: break-word;
   background: transparent;
@@ -429,6 +429,7 @@
   line-height: 1.45;
   background-color: var(--color-markup-code-block);
   border-radius: var(--border-radius);
+  overflow: auto;
 }
 
 .markup .highlight pre {

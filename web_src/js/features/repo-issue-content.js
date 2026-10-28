@@ -1,8 +1,8 @@
 import $ from 'jquery';
-import {svg} from '../svg.js';
-import {showErrorToast} from '../modules/toast.js';
-import {GET, POST} from '../modules/fetch.js';
-import {showElem} from '../utils/dom.js';
+import {svg} from '../svg.ts';
+import {showErrorToast} from '../modules/toast.ts';
+import {GET, POST} from '../modules/fetch.ts';
+import {showElem} from '../utils/dom.ts';
 
 const {appSubUrl} = window.config;
 let i18nTextEdited;
