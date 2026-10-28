@@ -986,7 +986,8 @@ overflow-menu .ui.label {
   color: var(--color-secondary-dark-2) !important;
 }
 
-.oauth2-authorize-application-box {
+.oauth2-authorize-application-box,
+.oauth2-select-account-box {
   margin-top: 3em !important;
 }
 

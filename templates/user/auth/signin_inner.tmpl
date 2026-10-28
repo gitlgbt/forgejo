@@ -2,6 +2,11 @@
 	{{if or (not .LinkAccountMode) (and .LinkAccountMode .LinkAccountModeSignIn)}}
 	{{template "base/alert" .}}
 	{{end}}
+	{{if .IsSwitchAccountAdd}}
+	<div class="ui info message">
+		{{ctx.Locale.Tr "auth.switch_account_prompt"}}
+	</div>
+	{{end}}
 	<h4 class="ui top attached header center">
 		{{if .LinkAccountMode}}
 			{{ctx.Locale.Tr "auth.oauth_signin_title"}}

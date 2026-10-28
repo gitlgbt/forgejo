@@ -522,6 +522,12 @@ func AuthorizeOAuth(ctx *context.Context) {
 		return
 	}
 
+	// The client asked the user to choose which account to authorize as.
+	if promptSelectAccount(form.Prompt) {
+		renderSelectAccount(ctx, app, form)
+		return
+	}
+
 	grant, err := app.GetGrantByUserID(ctx, ctx.Doer.ID)
 	if err != nil {
 		handleServerError(ctx, form.State, form.RedirectURI, err)
@@ -1394,16 +1400,26 @@ func handleOAuth2SignIn(ctx *context.Context, source *auth.Source, u *user_model
 	// If this user is enrolled in 2FA and this source doesn't override it,
 	// we can't sign the user in just yet. Instead, redirect them to the 2FA authentication page.
 	if !needs2FA {
+
+		// Track this account in the session's account switcher, preserving any
+		// account that was already signed in (e.g. when adding an account via an
+		// OAuth2 provider). The 2FA path below completes through handleSignInFull,
+		// which records the account itself.
+		switchAccounts := addSwitchAccountID(getSwitchAccountIDs(ctx), u.ID)
+
 		if err := ctx.SetSSOLTACookie(u, source.ID); err != nil {
 			ctx.ServerError("SetSSOLTACookie", err)
 			return
 		}
 
-		if err := updateSession(ctx,
-			[]string{"oauth_signin_silent"},
-			map[string]any{
-				"uid": u.ID,
-			}); err != nil {
+		if err := updateSession(ctx, []string{
+			"oauth_signin_silent",
+			// The add-account flow (if any) is complete now.
+			sessionKeySwitchAdd,
+		}, map[string]any{
+			"uid":                    u.ID,
+			sessionKeySwitchAccounts: switchAccounts,
+		}); err != nil {
 			ctx.ServerError("updateSession", err)
 			return
 		}

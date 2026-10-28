@@ -164,6 +164,7 @@
 						<span>{{ctx.Locale.Tr "signed_in_as"}} <strong>{{.SignedUser.Name}}</strong></span>
 					</span>
 					<hr>
+					{{template "base/head_navbar_switch_accounts" .}}
 					<ul>
 						<li>
 							<a href="{{.SignedUser.HomeLink}}">

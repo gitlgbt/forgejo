@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -146,6 +147,13 @@ func RedirectAfterLogin(ctx *context.Context) {
 }
 
 func CheckAutoLogin(ctx *context.Context) bool {
+	// While adding an account to the switcher, the remember-me cookie still
+	// belongs to the signed-in account. Signing that account back in from the
+	// 2FA or OpenID pages would silently abort the add.
+	if IsSwitchAccountAddMode(ctx) {
+		return false
+	}
+
 	// redirect_to must be set before autoSignIn so it survives the SSO IdP round-trip.
 	redirectTo := ctx.FormString("redirect_to")
 	if len(redirectTo) > 0 {
@@ -174,13 +182,26 @@ func CheckAutoLogin(ctx *context.Context) bool {
 func SignIn(ctx *context.Context) {
 	ctx.Data["Title"] = ctx.Tr("sign_in")
 
-	if CheckAutoLogin(ctx) {
-		return
-	}
+	// When adding an account to the switcher the user is still signed in; skip
+	// the auto-login and the already-signed-in redirect so the form is shown.
+	addAccount := IsSwitchAccountAddMode(ctx)
+	ctx.Data["IsSwitchAccountAdd"] = addAccount
 
-	if ctx.IsSigned {
-		RedirectAfterLogin(ctx)
-		return
+	if !addAccount {
+		if CheckAutoLogin(ctx) {
+			return
+		}
+
+		if ctx.IsSigned {
+			RedirectAfterLogin(ctx)
+			return
+		}
+	} else {
+		// Re-affirm the session flag so the steps without a query parameter (the
+		// 2FA continuation) stay in add mode. Best-effort: the query parameter is
+		// the authoritative signal for the form submission itself.
+		_ = ctx.Session.Set(sessionKeySwitchAdd, true)
+		_ = ctx.Session.Release()
 	}
 
 	oauth2Providers, err := oauth2.GetOAuth2Providers(ctx, optional.Some(true))
@@ -190,7 +211,7 @@ func SignIn(ctx *context.Context) {
 	}
 	ctx.Data["OAuth2Providers"] = oauth2Providers
 	ctx.Data["Title"] = ctx.Tr("sign_in")
-	ctx.Data["SignInLink"] = setting.AppSubURL + "/user/login"
+	ctx.Data["SignInLink"] = switchAccountSignInLink(addAccount)
 	ctx.Data["PageIsSignIn"] = true
 	ctx.Data["PageIsLogin"] = true
 	ctx.Data["EnableInternalSignIn"] = setting.Service.EnableInternalSignIn
@@ -213,9 +234,11 @@ func SignInPost(ctx *context.Context) {
 		ctx.ServerError("UserSignIn", err)
 		return
 	}
+	addAccount := IsSwitchAccountAddMode(ctx)
+	ctx.Data["IsSwitchAccountAdd"] = addAccount
 	ctx.Data["OAuth2Providers"] = oauth2Providers
 	ctx.Data["Title"] = ctx.Tr("sign_in")
-	ctx.Data["SignInLink"] = setting.AppSubURL + "/user/login"
+	ctx.Data["SignInLink"] = switchAccountSignInLink(addAccount)
 	ctx.Data["PageIsSignIn"] = true
 	ctx.Data["PageIsLogin"] = true
 	ctx.Data["EnableInternalSignIn"] = setting.Service.EnableInternalSignIn
@@ -341,7 +364,18 @@ func handleSignInFull(ctx *context.Context, u *user_model.User, remember, obeyRe
 			ctx.ServerError("GenerateAuthToken", err)
 			return setting.AppSubURL + "/"
 		}
+	} else if IsSwitchAccountAddMode(ctx) {
+		// The remember-me cookie of the previously active account must not
+		// outlive the switch to the account being added.
+		if err := moveRememberCookie(ctx, u); err != nil {
+			ctx.ServerError("moveRememberCookie", err)
+			return setting.AppSubURL + "/"
+		}
 	}
+
+	// Track this account in the session's account switcher, preserving any
+	// account that was already signed in (e.g. when adding an account).
+	switchAccounts := addSwitchAccountID(getSwitchAccountIDs(ctx), u.ID)
 
 	if err := updateSession(ctx, []string{
 		// Delete the openid, 2fa and linkaccount data
@@ -355,8 +389,11 @@ func handleSignInFull(ctx *context.Context, u *user_model.User, remember, obeyRe
 		"twofaSSOLTASourceID",
 		"twofaOpenID",
 		"linkAccount",
+		// The add-account flow is complete now.
+		sessionKeySwitchAdd,
 	}, map[string]any{
-		"uid": u.ID,
+		"uid":                    u.ID,
+		sessionKeySwitchAccounts: switchAccounts,
 	}); err != nil {
 		ctx.ServerError("RegenerateSession", err)
 		return setting.AppSubURL + "/"
@@ -931,6 +968,21 @@ func ActivateEmail(ctx *context.Context) {
 }
 
 func updateSession(ctx *context.Context, deletes []string, updates map[string]any) error {
+	// Some keys must survive session regeneration so that multi-step flows keep
+	// working: the account switcher tracks its state across the sign-in flow
+	// (which regenerates the session several times, e.g. during 2FA).
+	for _, k := range []string{sessionKeySwitchAccounts, sessionKeySwitchAdd} {
+		if _, overridden := updates[k]; overridden || slices.Contains(deletes, k) {
+			continue
+		}
+		if v := ctx.Session.Get(k); v != nil {
+			if updates == nil {
+				updates = make(map[string]any)
+			}
+			updates[k] = v
+		}
+	}
+
 	if _, err := session.RegenerateSession(ctx.Resp, ctx.Req); err != nil {
 		return fmt.Errorf("regenerate session: %w", err)
 	}

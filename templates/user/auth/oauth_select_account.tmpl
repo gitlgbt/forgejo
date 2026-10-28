@@ -1,0 +1,49 @@
+{{template "base/head" .}}
+<div
+	role="main"
+	aria-label="{{.Title}}"
+	class="page-content ui one column stackable center aligned page grid oauth2-select-account-box"
+>
+	<div class="column seven wide">
+		<div class="ui middle centered raised segments">
+			<h3 class="ui top attached header">{{ctx.Locale.Tr "auth.oauth_select_account_title" .Application.Name}}</h3>
+			<div class="ui attached segment">
+				{{template "base/alert" .}}
+				<p>{{ctx.Locale.Tr "auth.oauth_select_account_description"}}</p>
+				{{range .Accounts}}
+				<form method="post" action="{{AppSubUrl}}/login/oauth/select_account" class="tw-mb-2">
+					<input type="hidden" name="redirect_to" value="{{$.RedirectTo}}" />
+					<input type="hidden" name="uid" value="{{.ID}}" />
+					<button type="submit" class="ui fluid basic button tw-flex tw-items-center tw-justify-center tw-gap-2">
+						{{ctx.AvatarUtils.Avatar . 24}} {{ctx.Locale.Tr "auth.oauth_select_account_continue_as" .Name}}
+					</button>
+				</form>
+				{{end}}
+				<form method="post" action="{{AppSubUrl}}/login/oauth/select_account">
+					<input type="hidden" name="redirect_to" value="{{.RedirectTo}}" />
+					<input type="hidden" name="add" value="1" />
+					<button
+						type="submit"
+						id="select-account-add"
+						class="ui fluid basic button tw-flex tw-items-center tw-justify-center tw-gap-2"
+					>
+						{{svg "octicon-person-add"}} {{ctx.Locale.Tr "auth.oauth_select_account_other"}}
+					</button>
+				</form>
+			</div>
+			<div class="ui attached segment">
+				<form method="post" action="{{AppSubUrl}}/login/oauth/grant">
+					<input type="hidden" name="client_id" value="{{.Application.ClientID}}" />
+					<input type="hidden" name="state" value="{{.State}}" />
+					<input type="hidden" name="scope" value="{{.Scope}}" />
+					<input type="hidden" name="nonce" value="{{.Nonce}}" />
+					<input type="hidden" name="redirect_uri" value="{{.RedirectURI}}" />
+					<button type="submit" id="select-account-cancel" name="granted" value="false" class="ui basic primary inline button">
+						{{ctx.Locale.Tr "cancel"}}
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+{{template "base/footer" .}}

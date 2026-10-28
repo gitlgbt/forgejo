@@ -145,6 +145,8 @@ type AuthorizationForm struct {
 	State        string
 	Scope        string
 	Nonce        string
+	// Prompt is the OpenID Connect prompt parameter, a space-delimited list.
+	Prompt string
 
 	// PKCE support
 	CodeChallengeMethod string // S256, plain

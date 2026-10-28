@@ -1,0 +1,30 @@
+{{if .SwitchAccounts}}
+	{{$switchAccounts := call .SwitchAccounts}}
+	{{if $switchAccounts}}
+		<span class="header">{{ctx.Locale.Tr "auth.switch_account"}}</span>
+		<ul>
+			{{range $switchAccounts}}
+				<li class="tw-flex tw-items-center">
+					<a class="link-action tw-flex-1 tw-flex tw-items-center tw-gap-2" href data-url="{{AppSubUrl}}/user/account_switch/{{.ID}}" data-tooltip-content="{{ctx.Locale.Tr "auth.switch_account_to" .Name}}">
+						{{svg "octicon-arrow-switch" 16}}
+						{{ctx.AvatarUtils.Avatar . 20}}
+						{{.Name}}
+					</a>
+					<a class="link-action muted tw-px-2 tw-flex tw-items-center" href data-url="{{AppSubUrl}}/user/account_switch/{{.ID}}/remove" data-tooltip-content="{{ctx.Locale.Tr "auth.switch_account_remove"}}" aria-label="{{ctx.Locale.Tr "auth.switch_account_remove"}}">
+						{{svg "octicon-x" 14}}
+					</a>
+				</li>
+			{{end}}
+		</ul>
+		<hr>
+	{{end}}
+{{end}}
+<ul>
+	<li>
+		<a class="link-action" href data-url="{{AppSubUrl}}/user/account_switch/add">
+			{{svg "octicon-person-add"}}
+			{{ctx.Locale.Tr "auth.switch_account_add"}}
+		</a>
+	</li>
+</ul>
+<hr>
