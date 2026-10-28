@@ -1,7 +1,8 @@
 interface Window {
   config?: {
     appUrl: string;
-    appSubUrl: string
+    appSubUrl: string;
+    pageData?: Record<string, unknown>;
   }
 }
 

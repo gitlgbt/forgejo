@@ -7,8 +7,9 @@
 					{{template "repo/icon" .}}
 				</div>
 				<div class="flex-item-main">
-					<div class="flex-item-title tw-font-normal">
+					<div class="flex-item-title tw-font-normal tw-flex tw-items-center">
 						<a class="muted" href="{{.Owner.HomeLink}}">{{.Owner.Name}}</a>/<a class="muted tw-font-semibold" href="{{$.RepoLink}}">{{.Name}}</a>
+						{{template "repo/repo_switcher" $}}
 					</div>
 				</div>
 				<div class="flex-item-trailing">

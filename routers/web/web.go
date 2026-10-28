@@ -1531,6 +1531,7 @@ func registerRoutes(m *web.Route) {
 
 	// Tags
 	m.Group("/{username}/{reponame}", func() {
+		m.Get("/repo-switcher/list", repo.SwitcherList)
 		m.Group("/tags", func() {
 			m.Get("", repo.TagsList)
 			m.Get("/list", repo.GetTagList)

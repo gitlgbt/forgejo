@@ -10,6 +10,7 @@ import {initUnicodeEscapeButton} from './repo-unicode-escape.js';
 import {svg} from '../svg.js';
 import {htmlEscape} from 'escape-goat';
 import {initRepoBranchTagSelector} from './repo-branch-tag-selector.js';
+import {initRepoSwitcher} from './repo-switcher.ts';
 import {
   initRepoCloneLink, initRepoCommonBranchOrTagDropdown, initRepoCommonFilterSearchDropdown,
 } from './repo-common.js';
@@ -399,6 +400,7 @@ export function initRepository() {
   if (!$('.page-content.repository').length) return;
 
   initRepoBranchTagSelector('.js-branch-tag-selector');
+  initRepoSwitcher();
 
   // Options
   if ($('.repository.settings.options').length > 0) {

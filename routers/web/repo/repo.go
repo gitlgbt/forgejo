@@ -788,6 +788,53 @@ func GetTagList(ctx *context.Context) {
 	ctx.JSON(http.StatusOK, resp)
 }
 
+type repoSwitcherEntry struct {
+	Name     string `json:"name"`
+	FullName string `json:"full_name"`
+	Link     string `json:"link"`
+	Private  bool   `json:"private"`
+	Archived bool   `json:"archived"`
+}
+
+type repoSwitcherResponse struct {
+	Results []repoSwitcherEntry `json:"results"`
+	More    bool                `json:"more"`
+}
+
+// SwitcherList returns repositories owned by the current repo's owner that
+// the viewer is allowed to see, for the header repository quick-switcher.
+func SwitcherList(ctx *context.Context) {
+	const maxRepoSwitcherResults = 100
+
+	repos, count, err := repo_model.SearchRepository(ctx, &repo_model.SearchRepoOptions{
+		ListOptions: db.ListOptions{Page: 1, PageSize: maxRepoSwitcherResults},
+		Actor:       ctx.Doer,
+		OwnerID:     ctx.Repo.Owner.ID,
+		Private:     ctx.IsSigned,
+		OrderBy:     db.SearchOrderByRecentUpdated,
+		Collaborate: optional.Some(false),
+	})
+	if err != nil {
+		ctx.ServerError("SearchRepository", err)
+		return
+	}
+
+	resp := &repoSwitcherResponse{
+		Results: make([]repoSwitcherEntry, 0, len(repos)),
+		More:    count > int64(len(repos)),
+	}
+	for _, repo := range repos {
+		resp.Results = append(resp.Results, repoSwitcherEntry{
+			Name:     repo.Name,
+			FullName: repo.FullName(),
+			Link:     repo.Link(),
+			Private:  repo.IsPrivate,
+			Archived: repo.IsArchived,
+		})
+	}
+	ctx.JSON(http.StatusOK, resp)
+}
+
 func PrepareBranchList(ctx *context.Context) {
 	branchOpts := git_model.FindBranchOptions{
 		RepoID:          ctx.Repo.Repository.ID,

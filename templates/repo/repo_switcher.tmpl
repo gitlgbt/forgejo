@@ -1,0 +1,18 @@
+<script type="module">
+	const data = {
+		'currentRepoName': {{.Repository.Name}},
+		'fetchUrl': {{print .RepoLink "/repo-switcher/list"}},
+		'ownerReposUrl': {{.Repository.Owner.HomeLink}},
+		'textLabel': {{ctx.Locale.Tr "repo.switcher.label"}},
+		'textSearchPlaceholder': {{ctx.Locale.Tr "repo.switcher.search_placeholder"}},
+		'textNoResults': {{ctx.Locale.Tr "repo.switcher.no_results"}},
+		'textSearchAll': {{ctx.Locale.Tr "repo.switcher.search_all"}},
+		'textLoadError': {{ctx.Locale.Tr "repo.switcher.load_error"}},
+	};
+	window.config.pageData.repoSwitcherDataList = window.config.pageData.repoSwitcherDataList || [];
+	window.config.pageData.repoSwitcherDataList.push(data);
+</script>
+<div class="js-repo-switcher">
+	{{/* Static placeholder caret, shown immediately and replaced when the Vue component mounts, to avoid a load flash. */}}
+	<button class="repo-switcher-button" aria-label="{{ctx.Locale.Tr "repo.switcher.label"}}">{{svg "octicon-triangle-down" 14}}</button>
+</div>

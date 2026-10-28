@@ -71,3 +71,30 @@
 .repo-buttons details.dropdown > summary.button {
   --button-min-height: 33.133px;
 }
+
+/* Repo quick-switcher: an icon-only toggle next to the repo name. Styles are
+   global (not scoped to the Vue component) so the server-rendered placeholder
+   caret matches the mounted component exactly and there is no load flash. */
+.js-repo-switcher {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.25rem;
+}
+
+.repo-switcher-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  margin: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-light-1);
+  cursor: pointer;
+  border-radius: var(--border-radius);
+}
+
+.repo-switcher-button:hover {
+  color: var(--color-text);
+  background: var(--color-hover);
+}
