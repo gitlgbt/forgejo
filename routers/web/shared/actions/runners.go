@@ -54,6 +54,7 @@ type runnersCtx struct {
 	IsOrg                 bool
 	IsAdmin               bool
 	IsUser                bool
+	IsPrivate             bool
 	RunnerCreateTemplate  base.TplName
 	RunnerDetailsTemplate base.TplName
 	RunnerEditTemplate    base.TplName
@@ -68,6 +69,7 @@ func getRunnersCtx(ctx *context.Context) (*runnersCtx, error) {
 			RepoID:                ctx.Repo.Repository.ID,
 			OwnerID:               0,
 			IsRepo:                true,
+			IsPrivate:             ctx.Repo.Repository.IsPrivate,
 			RunnerCreateTemplate:  tplRepoRunnerCreate,
 			RunnerDetailsTemplate: tplRepoRunnerDetails,
 			RunnerEditTemplate:    tplRepoRunnerEdit,
@@ -86,6 +88,7 @@ func getRunnersCtx(ctx *context.Context) (*runnersCtx, error) {
 			RepoID:                0,
 			OwnerID:               ctx.Org.Organization.ID,
 			IsOrg:                 true,
+			IsPrivate:             false,
 			RunnerCreateTemplate:  tplOrgRunnerCreate,
 			RunnerDetailsTemplate: tplOrgRunnerDetails,
 			RunnerEditTemplate:    tplOrgRunnerEdit,
@@ -100,6 +103,7 @@ func getRunnersCtx(ctx *context.Context) (*runnersCtx, error) {
 			RepoID:                0,
 			OwnerID:               0,
 			IsAdmin:               true,
+			IsPrivate:             false,
 			RunnerCreateTemplate:  tplAdminRunnerCreate,
 			RunnerDetailsTemplate: tplAdminRunnerDetails,
 			RunnerEditTemplate:    tplAdminRunnerEdit,
@@ -114,6 +118,7 @@ func getRunnersCtx(ctx *context.Context) (*runnersCtx, error) {
 			OwnerID:               ctx.Doer.ID,
 			RepoID:                0,
 			IsUser:                true,
+			IsPrivate:             false,
 			RunnerCreateTemplate:  tplUserRunnerCreate,
 			RunnerDetailsTemplate: tplUserRunnerDetails,
 			RunnerEditTemplate:    tplUserRunnerEdit,
@@ -144,6 +149,7 @@ func RunnersList(ctx *context.Context) {
 		WithVisible: true,
 		Sort:        ctx.Req.URL.Query().Get("sort"),
 		Filter:      ctx.Req.URL.Query().Get("q"),
+		IsPrivate:   rCtx.IsPrivate,
 	}
 	if rCtx.IsRepo {
 		opts.RepoID = rCtx.RepoID
@@ -354,6 +360,7 @@ func RunnerEdit(ctx *context.Context) {
 	ctx.Data["RunnerOwnerID"] = rCtx.OwnerID
 	ctx.Data["RunnerRepoID"] = rCtx.RepoID
 	ctx.Data["RunnersListLink"] = rCtx.RedirectLink
+	ctx.Data["OnlyPublic"] = runner.OnlyPublic
 	ctx.HTML(http.StatusOK, rCtx.RunnerEditTemplate)
 }
 
@@ -394,14 +401,14 @@ func RunnerEditPost(ctx *context.Context) {
 	form := web.GetForm(ctx).(*forms.EditRunnerForm)
 	runner.Name = form.RunnerName
 	runner.Description = form.RunnerDescription
-
+	runner.OnlyPublic = form.OnlyPublic
 	if ctx.HasError() {
 		ctx.HTML(http.StatusOK, rCtx.RunnerEditTemplate)
 		return
 	}
 
 	if !form.RegenerateToken {
-		err = actions_model.UpdateRunner(ctx, runner, "name", "description")
+		err = actions_model.UpdateRunner(ctx, runner, "name", "description", "only_public")
 		if err != nil {
 			log.Warn("RunnerEditPost.UpdateRunner failed: %v, url: %s", err, ctx.Req.URL)
 			ctx.Flash.Warning(ctx.Tr("actions.runners.update_runner.failed"))

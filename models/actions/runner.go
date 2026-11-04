@@ -50,6 +50,7 @@ type ActionRunner struct {
 	Description string                 `xorm:"TEXT"`
 	Base        int                    // 0 native 1 docker 2 virtual machine
 	RepoRange   string                 // glob match which repositories could use this runner
+	OnlyPublic  bool                   `xorm:"only_public DEFAULT false"` // If the runner is global, only show it for public repositories
 
 	Token     string `xorm:"-"`
 	TokenHash string `xorm:"UNIQUE"` // sha256 of token
@@ -211,6 +212,7 @@ type FindRunnerOptions struct {
 	Filter      string
 	IsOnline    optional.Option[bool]
 	WithVisible bool // include all runners that are visible to the repository, owner, or instance
+	IsPrivate   bool
 }
 
 func (opts FindRunnerOptions) ToConds() builder.Cond {
@@ -244,6 +246,11 @@ func (opts FindRunnerOptions) ToConds() builder.Cond {
 			cond = cond.And(builder.Lte{"last_online": time.Now().Add(-RunnerOfflineTime).Unix()})
 		}
 	}
+
+	if opts.IsPrivate {
+		cond = cond.And(builder.Eq{"only_public": false})
+	}
+
 	return cond
 }
 

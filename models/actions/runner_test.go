@@ -441,6 +441,12 @@ func TestRunner_FindRunnerOptionsToConds(t *testing.T) {
 			unexpectedRunners: RunnerList{},
 		},
 		{
+			name:              "All runners for public repos on instance",
+			opts:              FindRunnerOptions{OwnerID: 0, RepoID: 0, WithVisible: true, IsPrivate: true},
+			expectedRunners:   RunnerList{runner1, runner2, runner4, runner5},
+			unexpectedRunners: RunnerList{},
+		},
+		{
 			name:              "Only runners owned by organization",
 			opts:              FindRunnerOptions{OwnerID: 3, RepoID: 0, WithVisible: false},
 			expectedRunners:   RunnerList{runner1},

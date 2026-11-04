@@ -145,6 +145,33 @@ func TestActionTask_GetAvailableJobsForRunner(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("Skipping private repositories", func(t *testing.T) {
+		defer unittest.OverrideFixtures("models/actions/TestActionTask_GetAvailableJobsForRunner")()
+		require.NoError(t, unittest.PrepareTestDatabase())
+
+		runner := unittest.AssertExistsAndLoadBean(t, &ActionRunner{ID: 73714})
+
+		e := db.GetEngine(t.Context())
+		jobs, err := GetAvailableJobsForRunner(e, runner)
+		require.NoError(t, err)
+
+		assert.Len(t, jobs, 3)
+		assert.Equal(t, int64(504020), jobs[0].ID)
+		assert.Equal(t, int64(504010), jobs[1].ID)
+		assert.Equal(t, int64(504030), jobs[2].ID)
+
+		repo62 := unittest.AssertExistsAndLoadBean(t, &repo.Repository{ID: 62})
+		repo62.IsPrivate = true
+
+		_, err = e.ID(repo62.ID).Cols("is_private").Update(repo62)
+		require.NoError(t, err)
+
+		jobs, err = GetAvailableJobsForRunner(e, runner)
+		require.NoError(t, err)
+
+		assert.Len(t, jobs, 0)
+	})
 }
 
 func TestActionTask_DeleteTask(t *testing.T) {

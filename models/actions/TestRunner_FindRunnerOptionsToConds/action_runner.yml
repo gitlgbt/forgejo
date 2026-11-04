@@ -25,6 +25,7 @@
   description: "A runner for everyone"
   agent_labels: ["docker"]
   deleted: 0
+  only_public: true
 - id: 719934
   uuid: "022650a8-e999-4a3d-afb0-21f75233798b"
   name: "runner-4"

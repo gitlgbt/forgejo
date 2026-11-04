@@ -29,6 +29,7 @@ type EditRunnerForm struct {
 	RunnerName        string `binding:"Required;MaxSize(255)"`
 	RunnerDescription string
 	RegenerateToken   bool
+	OnlyPublic        bool
 }
 
 // Validate validates the submitted form.
