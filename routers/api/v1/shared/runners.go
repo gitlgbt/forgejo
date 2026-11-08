@@ -95,8 +95,8 @@ func ListRunners(ctx *context.APIContext, ownerID, repoID int64) {
 
 	listOptions := utils.GetListOptions(ctx)
 	isPrivate := false
-	if ctx.Repo() != nil {
-		isPrivate = ctx.Repo().Repository.IsPrivate
+	if ctx.Repository() != nil {
+		isPrivate = ctx.Repository().IsPrivate
 	}
 
 	runners, total, err := db.FindAndCount[actions_model.ActionRunner](ctx, &actions_model.FindRunnerOptions{
