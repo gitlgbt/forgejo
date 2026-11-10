@@ -1,0 +1,2 @@
+@import "./theme-fryrvo-light.css" (prefers-color-scheme: light);
+@import "./theme-fryrvo-dark.css" (prefers-color-scheme: dark);

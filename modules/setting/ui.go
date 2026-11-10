@@ -95,7 +95,7 @@ var UI = struct {
 	ReactionMaxUserNum:  10,
 	MaxDisplayFileSize:  8388608,
 	DefaultTheme:        `gitdotlgbt-dark`,
-	Themes:              []string{`gitdotlgbt-auto`, `gitdotlgbt-light`, `gitdotlgbt-dark`, `forgejo-auto`, `forgejo-light`, `forgejo-dark`, `gitea-auto`, `gitea-light`, `gitea-dark`, `forgejo-auto-deuteranopia-protanopia`, `forgejo-light-deuteranopia-protanopia`, `forgejo-dark-deuteranopia-protanopia`, `forgejo-auto-tritanopia`, `forgejo-light-tritanopia`, `forgejo-dark-tritanopia`},
+	Themes:              []string{`gitdotlgbt-auto`, `gitdotlgbt-light`, `gitdotlgbt-dark`, `fryrvo-auto`, `fryrvo-light`, `fryrvo-dark`, `forgejo-auto`, `forgejo-light`, `forgejo-dark`, `gitea-auto`, `gitea-light`, `gitea-dark`, `forgejo-auto-deuteranopia-protanopia`, `forgejo-light-deuteranopia-protanopia`, `forgejo-dark-deuteranopia-protanopia`, `forgejo-auto-tritanopia`, `forgejo-light-tritanopia`, `forgejo-dark-tritanopia`},
 	Reactions:           []string{`+1`, `-1`, `laugh`, `hooray`, `confused`, `heart`, `rocket`, `eyes`},
 	CustomEmojis:        []string{`git`, `gitea`, `codeberg`, `gitlab`, `github`, `gogs`, `forgejo`},
 	ExploreDefaultSort:  "recentupdate",
