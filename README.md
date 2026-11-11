@@ -6,9 +6,16 @@
 
 ## gitlgbt/forgejo
 
-gitlgbt/forgejo is a customized version of [Forgejo](https://forgejo.org) made for git.lgbt
-<br>
-building upon modifications from [many project](#copyright--attribution) be sure to check them out
+> [!NOTE]
+>gitlgbt/forgejo is a customized version of [Forgejo](https://forgejo.org) made for git.lgbt
+><br>
+>building upon modifications from [many project](/NOTICE.md) be sure to check them out
+
+> [!NOTE]
+> some ui customization are at [gitlgbt/theme](https://git.lgbt/gitlgbt/theme)
+> <br>
+> and are not include here
+
 
 run and test locally
 
@@ -22,15 +29,6 @@ page will up at [http://127.0.0.1:3000/](http://127.0.0.1:3000/)
 you will meet with install page for the database choose SQLite3 (if it is not the default already)
 you can create admin account and start doing whatever you want to
 
-
-### Copyright & Attribution
-
-- Copyright (C) 2026 git.lgbt Authors and contributors All rights reserved.
-- Copyright (C) The git.gay Authors and contributors
-- Copyright (C) 2026 The Codefloe Authors
-- Copyright (C) The Forgejo Authors
-- Copyright (C) The Gitea Authors
-- Copyright (C) The Gogs Authors
 
 ---
 <br>
