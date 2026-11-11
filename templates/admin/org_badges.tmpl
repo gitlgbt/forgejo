@@ -1,0 +1,57 @@
+{{template "admin/layout_head" (dict "ctxData" . "pageClass" "admin org-badges")}}
+	
+	<h4 class="ui top attached header">
+		{{ctx.Locale.Tr "admin.org_badges"}} ({{len .BadgeTypes}})
+	</h4>
+	<div class="ui attached segment">
+		<p>{{ctx.Locale.Tr "admin.org_badges.intro"}}</p>
+		<form class="ui form" action="{{AppSubUrl}}/admin/badges/new" method="post">
+			{{.CsrfTokenHtml}}
+			<div class="field">
+				<label for="badge-name">{{ctx.Locale.Tr "org.badges.name"}}</label>
+				<input id="badge-name" name="name" maxlength="100" required>
+			</div>
+			<div class="field">
+				<label for="badge-description">{{ctx.Locale.Tr "org.badges.description"}}</label>
+				<input id="badge-description" name="description" maxlength="500">
+			</div>
+			<div class="field">
+				<label for="badge-icon">{{ctx.Locale.Tr "org.badges.icon_url"}}</label>
+				<input id="badge-icon" name="icon_url" type="url" placeholder="https://" required>
+			</div>
+			<div class="field">
+				<label for="badge-link">{{ctx.Locale.Tr "org.badges.link_url"}}</label>
+				<input id="badge-link" name="link_url" type="url" placeholder="https://">
+			</div>
+			<button class="ui primary button" type="submit">{{svg "octicon-plus"}} {{ctx.Locale.Tr "admin.org_badges.create"}}</button>
+		</form>
+	</div>
+	<div class="ui attached table segment">
+		{{if .BadgeTypes}}
+			<table class="ui very basic striped table unstackable">
+				<thead>
+					<tr>
+						<th></th>
+						<th>{{ctx.Locale.Tr "org.badges.name"}}</th>
+						<th>{{ctx.Locale.Tr "org.badges.description"}}</th>
+						<th>{{ctx.Locale.Tr "admin.org_badges.orgs"}}</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{{range .BadgeTypes}}
+						<tr>
+							<td><img width="32" height="32" src="{{.IconURL}}" alt="{{.Name}}" loading="lazy"></td>
+							<td><a href="{{AppSubUrl}}/admin/badges/{{.ID}}">{{.Name}}</a></td>
+							<td>{{.Description}}</td>
+							<td>{{index $.BadgeOrgCounts .ID}}</td>
+							<td class="tw-text-right"><a class="ui small button" href="{{AppSubUrl}}/admin/badges/{{.ID}}">{{ctx.Locale.Tr "admin.org_badges.manage"}}</a></td>
+						</tr>
+					{{end}}
+				</tbody>
+			</table>
+		{{else}}
+			<div class="tw-p-4 tw-text-center">{{ctx.Locale.Tr "admin.org_badges.none"}}</div>
+		{{end}}
+	</div>
+{{template "admin/layout_footer" .}}

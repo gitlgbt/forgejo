@@ -2,6 +2,8 @@
 // Copyright 2026 The Fryrvo and Gitlgbt Authors. All rights reserved.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import './org-badges.js';
+import './domain-verify.js';
 import {initAnnouncement} from './announcement.js';
 import {initAnnouncementEditors} from './announcement-editor.js';
 

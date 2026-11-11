@@ -1,0 +1,29 @@
+{{template "org/settings/layout_head" (dict "ctxData" . "pageClass" "organization settings badges")}}
+	<div class="org-setting-content">
+		<h4 class="ui top attached header">
+			{{ctx.Locale.Tr "org.badges"}}
+		</h4>
+		<div class="ui attached segment">
+			{{if .Badges}}
+				{{range .Badges}}
+					<div class="tw-flex tw-items-center tw-gap-3 tw-py-2">
+						{{template "org/badge/badge" .}}
+						<div class="tw-flex-1">
+							<strong>{{.Name}}</strong>
+							{{if not .IsPublic}}<span class="ui label">{{ctx.Locale.Tr "org.badges.hidden"}}</span>{{end}}
+							{{if .Description}}<div class="text light-2">{{.Description}}</div>{{end}}
+						</div>
+						{{if .IsPublic}}
+							<a class="small secondary button link-action" href data-url="{{$.OrgLink}}/badges/action/private?id={{.AwardID}}&back=settings">{{svg "octicon-eye-closed"}} {{ctx.Locale.Tr "org.badges.make_hidden"}}</a>
+						{{else}}
+							<a class="small secondary button link-action" href data-url="{{$.OrgLink}}/badges/action/public?id={{.AwardID}}&back=settings">{{svg "octicon-eye"}} {{ctx.Locale.Tr "org.badges.make_public"}}</a>
+						{{end}}
+					</div>
+				{{end}}
+			{{else}}
+				<div class="text light-2">{{ctx.Locale.Tr "org.badges.none"}}</div>
+			{{end}}
+			<div class="help tw-mt-2">{{ctx.Locale.Tr "org.badges.settings_help"}}</div>
+		</div>
+	</div>
+{{template "org/settings/layout_footer" .}}

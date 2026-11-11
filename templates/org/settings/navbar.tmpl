@@ -4,6 +4,9 @@
 		<a class="{{if .PageIsSettingsOptions}}active {{end}}item" href="{{.OrgLink}}/settings">
 			{{ctx.Locale.Tr "org.settings.options"}}
 		</a>
+		<a class="{{if .PageIsOrgSettingsBadges}}active {{end}}item" href="{{.OrgLink}}/settings/badges">
+			{{ctx.Locale.Tr "org.badges"}}
+		</a>
 		{{if not DisableWebhooks}}
 		<a class="{{if .PageIsSettingsHooks}}active {{end}}item" href="{{.OrgLink}}/settings/hooks">
 			{{ctx.Locale.Tr "repo.settings.hooks"}}

@@ -1,0 +1,32 @@
+{{template "base/head" .}}
+<div role="main" aria-label="{{.Title}}" class="page-content organization members">
+	{{template "org/header" .}}
+	<div class="ui container">
+		{{template "base/alert" .}}
+
+		{{if eq (len .Badges) 0}}
+			<div class="ui container">
+				<div class="empty-placeholder">
+					{{svg "octicon-star" 48}}
+					<h2>{{ctx.Locale.Tr "org.badges.none"}}</h2>
+				</div>
+			</div>
+		{{else}}
+			<div class="list">
+				{{range $idx, $_ := .Badges}}
+					{{if ne $idx 0}}
+						<div class="divider"></div>
+					{{end}}
+					{{template "org/badge/badge" .}}
+					<div>
+						<h3>{{.Name}}</h3>
+						{{if .Description}}<div>{{.Description}}</div>{{end}}
+					</div>
+					<div class="actions"></div>
+				{{end}}
+			</div>
+		{{end}}
+	</div>
+</div>
+
+{{template "base/footer" .}}

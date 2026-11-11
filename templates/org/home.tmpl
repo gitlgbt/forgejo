@@ -70,6 +70,17 @@
 						{{end}}
 					</div>
 				{{end}}
+				{{if .NumBadges}}
+					<h4 class="ui top attached header tw-flex">
+						<strong class="tw-flex-1">{{ctx.Locale.Tr "org.badges"}}</strong>
+						<a class="text grey tw-flex tw-items-center" href="{{.OrgLink}}/badges"><span>{{.NumBadges}}</span> {{svg "octicon-chevron-right"}}</a>
+					</h4>
+					<div class="ui attached segment members">
+						{{range .Badges}}
+							{{template "org/badge/badge" .}}
+						{{end}}
+					</div>
+				{{end}}
 				{{if .IsOrganizationMember}}
 					<div class="ui top attached header tw-flex">
 						<strong class="tw-flex-1">{{ctx.Locale.Tr "org.teams"}}</strong>

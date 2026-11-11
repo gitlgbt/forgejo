@@ -1,0 +1,90 @@
+{{template "admin/layout_head" (dict "ctxData" . "pageClass" "admin org-badges")}}
+	
+	<h4 class="ui top attached header">
+		<a href="{{AppSubUrl}}/admin/badges">{{ctx.Locale.Tr "admin.org_badges"}}</a> / {{.BadgeType.Name}}
+	</h4>
+	<div class="ui attached segment">
+		<form class="ui form" action="{{AppSubUrl}}/admin/badges/{{.BadgeType.ID}}/edit" method="post">
+			{{.CsrfTokenHtml}}
+			<div class="field">
+				<img id="badge-preview" width="64" height="64" src="{{.BadgeType.IconURL}}" alt="{{.BadgeType.Name}}">
+			</div>
+			<div class="field">
+				<label for="badge-name">{{ctx.Locale.Tr "org.badges.name"}}</label>
+				<input id="badge-name" name="name" maxlength="100" value="{{.BadgeType.Name}}" required>
+			</div>
+			<div class="field">
+				<label for="badge-description">{{ctx.Locale.Tr "org.badges.description"}}</label>
+				<input id="badge-description" name="description" maxlength="500" value="{{.BadgeType.Description}}">
+			</div>
+			<div class="field">
+				<label for="badge-icon">{{ctx.Locale.Tr "org.badges.icon_url"}}</label>
+				<input id="badge-icon" name="icon_url" type="url" value="{{.BadgeType.IconURL}}" required>
+			</div>
+			<div class="field">
+				<label for="badge-link">{{ctx.Locale.Tr "org.badges.link_url"}}</label>
+				<input id="badge-link" name="link_url" type="url" value="{{.BadgeType.LinkURL}}">
+			</div>
+			<button class="ui primary button tw-mt-2" type="submit">{{ctx.Locale.Tr "admin.org_badges.save"}}</button>
+		</form>
+	</div>
+
+	<h4 class="ui top attached header">
+		{{ctx.Locale.Tr "admin.org_badges.orgs"}} ({{len .BadgeOrgs}})
+	</h4>
+	<div class="ui attached segment">
+		<form class="ui form" action="{{AppSubUrl}}/admin/badges/{{.BadgeType.ID}}/award" method="post">
+			{{.CsrfTokenHtml}}
+			<div class="field">
+				<label for="badge-orgs">{{ctx.Locale.Tr "admin.org_badges.give_title"}}</label>
+				<input id="badge-orgs" name="org_names" placeholder="{{ctx.Locale.Tr "admin.org_badges.give_help"}}" required>
+			</div>
+			<button class="ui primary button" type="submit">{{svg "octicon-plus"}} {{ctx.Locale.Tr "admin.org_badges.give"}}</button>
+		</form>
+	</div>
+	<div class="ui attached table segment">
+		{{if .BadgeOrgs}}
+			<table class="ui very basic striped table unstackable">
+				<tbody>
+					{{range .BadgeOrgs}}
+						<tr>
+							<td>
+								<a href="{{AppSubUrl}}/{{.Org.Name}}">{{.Org.Name}}</a>
+								{{if not .IsPublic}}<span class="ui label">{{ctx.Locale.Tr "admin.org_badges.hidden_by_owner"}}</span>{{end}}
+							</td>
+							<td class="tw-text-right">
+								<button class="ui small red button delete-button" data-modal-id="revoke-badge"
+									data-url="{{AppSubUrl}}/admin/badges/{{$.BadgeType.ID}}/revoke?org_id={{.Org.ID}}"
+									data-name="{{.Org.Name}}">{{ctx.Locale.Tr "admin.org_badges.revoke"}}</button>
+							</td>
+						</tr>
+					{{end}}
+				</tbody>
+			</table>
+		{{else}}
+			<div class="tw-p-4 tw-text-center">{{ctx.Locale.Tr "admin.org_badges.no_orgs"}}</div>
+		{{end}}
+	</div>
+
+	<h4 class="ui top attached error header">{{ctx.Locale.Tr "admin.org_badges.delete"}}</h4>
+	<div class="ui attached error segment">
+		<button class="ui red button delete-button" data-modal-id="delete-badge"
+			data-url="{{AppSubUrl}}/admin/badges/{{.BadgeType.ID}}/delete"
+			data-name="{{.BadgeType.Name}}">{{svg "octicon-trash"}} {{ctx.Locale.Tr "admin.org_badges.delete"}}</button>
+	</div>
+
+	<div class="ui g-modal-confirm delete modal" id="revoke-badge">
+		<div class="header">{{ctx.Locale.Tr "admin.org_badges.revoke"}}</div>
+		<div class="content">
+			<p>{{ctx.Locale.Tr "admin.org_badges.revoke_detail" (`<span class="name"></span>`|TrustHTML)}}</p>
+		</div>
+		{{template "base/modal_actions_confirm" .}}
+	</div>
+	<div class="ui g-modal-confirm delete modal" id="delete-badge">
+		<div class="header">{{ctx.Locale.Tr "admin.org_badges.delete"}}</div>
+		<div class="content">
+			<p>{{ctx.Locale.Tr "admin.org_badges.delete_detail" (`<span class="name"></span>`|TrustHTML)}}</p>
+		</div>
+		{{template "base/modal_actions_confirm" .}}
+	</div>
+{{template "admin/layout_footer" .}}

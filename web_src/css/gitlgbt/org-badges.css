@@ -1,0 +1,138 @@
+/* Copyright 2026 The Fryrvo and Gitlgbt Authors. All rights reserved.
+ * SPDX-License-Identifier: GPL-3.0-or-later */
+.org-badge {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  vertical-align: top;
+  outline: none;
+}
+
+.org-badge img {
+  display: block;
+  border-radius: var(--border-radius);
+  transition: transform 0.15s ease;
+}
+
+.org-badge:hover img,
+.org-badge:focus-visible img {
+  transform: scale(1.08);
+}
+
+.org-badge-tip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  z-index: 100;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 140px;
+  max-width: min(260px, 80vw);
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--color-menu, #fff);
+  color: var(--color-text, inherit);
+  border: 1px solid var(--color-secondary, #ccc);
+  border-radius: var(--border-radius);
+  box-shadow: 0 6px 20px var(--color-shadow, rgba(0, 0, 0, 0.25));
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+}
+
+.org-badge-tip strong {
+  font-size: 14px;
+}
+
+.org-badge-tip span {
+  color: var(--color-text-light-1, inherit);
+}
+
+.org-badge-tip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: var(--color-menu, #fff);
+  border-right: 1px solid var(--color-secondary, #ccc);
+  border-bottom: 1px solid var(--color-secondary, #ccc);
+  transform: translate(-50%, -4px) rotate(45deg);
+}
+
+.org-badge:hover .org-badge-tip,
+.org-badge:focus-visible .org-badge-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+@media (min-width: 768px) {
+  .ui.attached.segment.members .org-badge-tip {
+    left: auto;
+    right: -8px;
+    transform: translate(0, 4px);
+  }
+  .ui.attached.segment.members .org-badge-tip::after {
+    left: auto;
+    right: 20px;
+    transform: translate(0, -4px) rotate(45deg);
+  }
+  .ui.attached.segment.members .org-badge:hover .org-badge-tip,
+  .ui.attached.segment.members .org-badge:focus-visible .org-badge-tip {
+    transform: translate(0, 0);
+  }
+}
+
+@media (hover: none), (max-width: 767px) {
+  .org-badge .org-badge-tip,
+  .ui.attached.segment.members .org-badge .org-badge-tip {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    padding: 12px 16px;
+    font-size: 14px;
+    transform: translate(0, 8px);
+  }
+  .org-badge .org-badge-tip::after {
+    display: none;
+  }
+  .org-badge:hover .org-badge-tip,
+  .ui.attached.segment.members .org-badge:hover .org-badge-tip,
+  .org-badge:focus-visible .org-badge-tip {
+    transform: translate(0, 8px);
+  }
+  .org-badge.is-open .org-badge-tip,
+  .ui.attached.segment.members .org-badge.is-open .org-badge-tip {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(0, 0);
+  }
+}
+
+@media (hover: none) {
+  .org-badge:hover .org-badge-tip,
+  .ui.attached.segment.members .org-badge:hover .org-badge-tip {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .org-badge.is-open .org-badge-tip,
+  .ui.attached.segment.members .org-badge.is-open .org-badge-tip {
+    opacity: 1;
+    visibility: visible;
+  }
+}

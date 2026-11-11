@@ -1,5 +1,5 @@
 // Copyright 2019 The Gitea Authors. All rights reserved.
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: GPL-3.0-or-later
 
 package org
 
@@ -153,7 +153,18 @@ func Home(ctx *context.Context) {
 	ctx.Data["Repos"] = repos
 	ctx.Data["Total"] = count
 	ctx.Data["Members"] = members
+
+	badges, err := organization.FindOrgBadgeItems(ctx, ctx.Org.Organization.ID, ctx.Org.IsMember)
+	if err != nil {
+		ctx.ServerError("FindOrgBadges", err)
+		return
+	}
+	ctx.Data["Badges"] = badges
+	ctx.Data["NumBadges"] = len(badges)
+	ctx.Data["ShowMemberAndTeamTab"] = ctx.Org.IsMember || len(members) > 0 || len(badges) > 0
+
 	ctx.Data["Teams"] = ctx.Org.Teams
+
 	ctx.Data["DisableNewPullMirrors"] = setting.Mirror.DisableNewPull
 	ctx.Data["PageIsViewRepositories"] = true
 

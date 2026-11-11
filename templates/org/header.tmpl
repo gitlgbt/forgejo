@@ -48,6 +48,27 @@
 		</div>
 		{{if .RenderedDescription}}<div class="render-content markup">{{.RenderedDescription}}</div>{{end}}
 		<div class="text light meta tw-mt-1">
+			
+			
+			{{if .Org.Website}}
+			<div id="org-verified" class="org-verified flex-text-block tw-hidden" data-website="{{.Org.Website}}" data-org="{{.Org.Name}}">
+				<div class="dialog-dropdown">
+					<button type="button" class="opener org-verified-pill" command="toggle-popover" commandfor="org-verified-popover">
+						<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+						<span>{{ctx.Locale.Tr "org.domain_verify.badge"}}</span>
+					</button>
+					<dialog popover id="org-verified-popover" class="org-verified-card">
+						<div class="org-verified-body">
+						<p>{{ctx.Locale.Tr "org.domain_verify.badge_description" .Org.Name}}</p>
+						<ul class="org-verified-domains"><li class="verify-domain"></li></ul>
+						<a href="https://docs.git.lgbt/verifyorg" target="_blank" rel="noopener noreferrer">{{ctx.Locale.Tr "org.domain_verify.learn_more"}}</a>
+						</div>
+					</dialog>
+				</div>
+			</div>
+			{{end}}
+
+
 			{{if .Org.Location}}<div class="flex-text-block">{{svg "octicon-location"}} <span>{{.Org.Location}}</span></div>{{end}}
 			{{if .Org.Website}}<div class="flex-text-block">{{svg "octicon-link"}} <a class="muted" target="_blank" rel="noopener noreferrer me" href="{{.Org.Website}}">{{.Org.Website}}</a></div>{{end}}
 			{{if .IsSigned}}

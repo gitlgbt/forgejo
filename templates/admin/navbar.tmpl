@@ -5,6 +5,7 @@
 			{{ctx.Locale.Tr "admin.dashboard"}}
 		</a>
 		<a class="{{if .PageIsAdminAnnouncements}}active {{end}}item" href="{{AppSubUrl}}/admin/announcements">{{ctx.Locale.Tr "admin.announcements"}}</a>
+		<a class="{{if .PageIsAdminOrgBadges}}active {{end}}item" href="{{AppSubUrl}}/admin/badges">{{ctx.Locale.Tr "admin.org_badges"}}</a>
 		{{if .DatabaseType.IsMySQL}}
 		<a class="{{if .PageIsAdminSelfCheck}}active {{end}}item" href="{{AppSubUrl}}/admin/self_check">
 			{{ctx.Locale.Tr "admin.self_check"}}

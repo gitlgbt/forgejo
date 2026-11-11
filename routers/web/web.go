@@ -920,6 +920,17 @@ func registerRoutes(m *web.Route) {
 	m.Group("/admin", func() {
 		m.Get("", admin.Dashboard)
 		m.Get("/system_status", admin.SystemStatus)
+		m.Group("/badges", func() {
+			m.Get("", admin.OrgBadges)
+			m.Post("/new", admin.OrgBadgeNew)
+			m.Group("/{id}", func() {
+				m.Get("", admin.OrgBadgeView)
+				m.Post("/edit", admin.OrgBadgeEdit)
+				m.Post("/delete", admin.OrgBadgeDelete)
+				m.Post("/award", admin.OrgBadgeAward)
+				m.Post("/revoke", admin.OrgBadgeRevoke)
+			})
+		})
 		m.Post("", web.Bind(forms.AdminDashboardForm{}), admin.DashboardPost)
 
 		if setting.Database.Type.IsMySQL() {
@@ -1096,6 +1107,7 @@ func registerRoutes(m *web.Route) {
 	m.Group("/org", func() {
 		m.Group("/{org}", func() {
 			m.Get("/members", org.Members)
+			m.Get("/badges", org.Badges)
 		}, context.OrgAssignment())
 	}, ignSignIn)
 
@@ -1121,6 +1133,7 @@ func registerRoutes(m *web.Route) {
 			m.Get("/milestones", reqMilestonesDashboardPageEnabled, user.Milestones)
 			m.Get("/milestones/{team}", reqMilestonesDashboardPageEnabled, user.Milestones)
 			m.Post("/members/action/{action}", org.MembersAction)
+			m.Post("/badges/action/{action}", org.BadgesAction)
 			m.Get("/teams", org.Teams)
 		}, context.OrgAssignment(true, false, true))
 
@@ -1147,6 +1160,7 @@ func registerRoutes(m *web.Route) {
 			m.Group("/settings", func() {
 				m.Combo("").Get(org.Settings).
 					Post(web.Bind(forms.UpdateOrgSettingForm{}), org.SettingsPost)
+				m.Get("/badges", org.SettingsBadges)
 				m.Post("/avatar", web.Bind(forms.AvatarForm{}), org.SettingsAvatar)
 				m.Post("/avatar/delete", org.SettingsDeleteAvatar)
 				m.Group("/applications", func() {
