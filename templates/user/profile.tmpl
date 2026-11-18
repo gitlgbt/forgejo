@@ -63,8 +63,11 @@
 					{{end}}
 					{{template "explore/repo_grid" .}}
 					<div class="divider"></div>
-					{{template "user/heatmap" .}}
-					{{template "user/dashboard/feeds" .}}
+					{{/* heatmap */}}
+{{if or .IsAdmin (eq .SignedUserID .ContextUser.ID) (not .ContextUser.KeepActivityPrivate)}}
+{{template "user/heatmap" .}}
+{{template "user/dashboard/feeds" .}}
+{{end}}
 				{{else if and FederationEnabled (eq .TabName "feed")}}
 					{{if eq .SignedUserID .ContextUser.ID}}
 						{{if .FollowingFeeds}}
@@ -74,7 +77,10 @@
 						{{end}}
 					{{end}}
 				{{else}}
-					{{template "shared/repo_search" .}}
+					{{if and (eq .TabName "repositories") .HeatmapData}}
+{{template "user/heatmap" .}}
+{{end}}
+{{template "shared/repo_search" .}}
 					{{template "explore/repo_list" .}}
 					{{template "base/paginate" .}}
 				{{end}}

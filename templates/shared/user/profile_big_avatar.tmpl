@@ -99,7 +99,9 @@
 			{{end}}
 			{{if and .Orgs .HasOrgsVisible}}
 			<li>
-				<ul class="user-orgs">
+				<div class="tw-w-full">
+					<div class="user-orgs-heading tw-font-semibold tw-mb-2">{{ctx.Locale.Tr "explore.organizations"}}</div>
+					<ul class="user-orgs">
 				{{range .Orgs}}
 					{{if (or .Visibility.IsPublic (and ($.SignedUser) (or .Visibility.IsLimited (and (.HasMemberWithUserID ctx $.SignedUserID) .Visibility.IsPrivate) ($.IsAdmin))))}}
 					<li>
@@ -110,6 +112,7 @@
 					{{end}}
 				{{end}}
 				</ul>
+				</div>
 			</li>
 			{{end}}
 			{{if .Badges}}

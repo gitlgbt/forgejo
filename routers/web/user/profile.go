@@ -170,6 +170,17 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 	private := ctx.FormOptionalBool("private")
 	ctx.Data["IsPrivate"] = private
 
+	// heatmap
+	if (tab == "overview" || tab == "repositories") && setting.Service.EnableUserHeatmap && (showPrivate || !ctx.ContextUser.KeepActivityPrivate) {
+		data, err := activities_model.GetUserHeatmapDataByUser(ctx, ctx.ContextUser, ctx.Doer, nil)
+		if err != nil {
+			ctx.ServerError("GetUserHeatmapDataByUser", err)
+			return
+		}
+		ctx.Data["HeatmapData"] = data
+		ctx.Data["HeatmapTotalContributions"] = activities_model.GetTotalContributionsInHeatmap(data)
+	}
+
 	switch tab {
 	case "followers":
 		ctx.Data["Cards"] = followers
