@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"forgejo.org/models"
 	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/models/organization"
@@ -19,6 +18,7 @@ import (
 	"forgejo.org/modules/translation"
 	"forgejo.org/services/auth"
 	"forgejo.org/services/auth/source/ldap"
+	org_service "forgejo.org/services/org"
 	"forgejo.org/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -453,9 +453,9 @@ func TestLDAPGroupTeamSyncAddMember(t *testing.T) {
 			assert.True(t, isMember, "Membership should be added to the right team")
 			// check that the login source is marked as reason for the team membership
 			unittest.AssertExistsAndLoadBean(t, &organization.TeamUser{TeamID: team.ID, UID: user.ID, Reason: organization.MembershipReasonAddedByAuthProvider, CreatedByLoginSourceID: optional.Some(loginSource.ID)})
-			err = models.RemoveTeamMember(db.DefaultContext, team, user.ID)
+			err = org_service.RemoveTeamMember(db.DefaultContext, team, user, user)
 			require.NoError(t, err)
-			err = models.RemoveOrgUser(db.DefaultContext, usersOrgs[0].ID, user.ID)
+			err = org_service.RemoveOrgUser(db.DefaultContext, usersOrgs[0].ID, user.ID)
 			require.NoError(t, err)
 		} else {
 			// assert members of LDAP group "cn=admin_staff" keep initial team membership since mapped team does not exist
@@ -485,7 +485,8 @@ func TestLDAPGroupTeamSyncRemoveMember(t *testing.T) {
 	})
 	err = organization.AddOrgUser(db.DefaultContext, org.ID, user.ID)
 	require.NoError(t, err)
-	err = models.AddTeamMemberByCooptation(db.DefaultContext, team, user.ID, 1)
+	inviterUser := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 1})
+	err = org_service.AddTeamMemberByCooptation(db.DefaultContext, team, user, inviterUser)
 	require.NoError(t, err)
 	isMember, err := organization.IsOrganizationMember(db.DefaultContext, org.ID, user.ID)
 	require.NoError(t, err)

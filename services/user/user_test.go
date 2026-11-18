@@ -29,6 +29,7 @@ import (
 	"forgejo.org/modules/timeutil"
 	"forgejo.org/modules/util"
 	"forgejo.org/services/auth/source/oauth2"
+	org_service "forgejo.org/services/org"
 	redirect_service "forgejo.org/services/redirect"
 
 	"github.com/stretchr/testify/assert"
@@ -74,7 +75,7 @@ func TestDeleteUser(t *testing.T) {
 			orgUsers := make([]*organization.OrgUser, 0, 10)
 			require.NoError(t, db.GetEngine(db.DefaultContext).Find(&orgUsers, &organization.OrgUser{UID: tc.userID}))
 			for _, orgUser := range orgUsers {
-				err := models.RemoveOrgUser(db.DefaultContext, orgUser.OrgID, orgUser.UID)
+				err := org_service.RemoveOrgUser(db.DefaultContext, orgUser.OrgID, orgUser.UID)
 				require.NoError(t, err)
 			}
 
@@ -463,7 +464,8 @@ func TestDeleteUserCleansUpMembershipProvenance(t *testing.T) {
 	user28 := unittest.AssertExistsAndLoadBean(t, &user_model.User{ID: 28})
 	team1 := unittest.AssertExistsAndLoadBean(t, &organization.Team{ID: 1})
 
-	require.NoError(t, models.AddTeamMemberByCooptation(db.DefaultContext, team1, user28.ID, user2.ID))
+	_, err := models.InsertTeamMember(db.DefaultContext, team1, user28.ID, organization.MembershipReasonAddedByUser, optional.Some(user2.ID), optional.None[int64]())
+	require.NoError(t, err)
 
 	require.NoError(t, DeleteUser(db.DefaultContext, user2, true))
 

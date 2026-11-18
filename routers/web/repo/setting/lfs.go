@@ -85,7 +85,7 @@ func LFSLocks(ctx *context.Context) {
 	pager := context.NewPagination(int(total), setting.UI.ExplorePagingNum, page, 5)
 	ctx.Data["Title"] = ctx.Tr("repo.settings.lfs_locks")
 	ctx.Data["PageIsSettingsLFS"] = true
-	lfsLocks, err := git_model.GetLFSLockByRepoID(ctx, ctx.Repo.Repository.ID, pager.Paginater.Current(), setting.UI.ExplorePagingNum)
+	lfsLocks, err := git_model.GetLFSLockListByRepoID(ctx, ctx.Repo.Repository.ID, pager.Paginater.Current(), setting.UI.ExplorePagingNum)
 	if err != nil {
 		ctx.ServerError("LFSLocks", err)
 		return
@@ -286,7 +286,7 @@ func LFSFileGet(ctx *context.Context) {
 
 	fileSize := meta.Size
 	ctx.Data["FileSize"] = meta.Size
-	ctx.Data["RawFileLink"] = fmt.Sprintf(
+	ctx.Data["TargetFileLink"] = fmt.Sprintf(
 		"%s%s/%s.git/info/lfs/objects/%s/%s",
 		setting.AppURL,
 		url.PathEscape(ctx.Repo.Repository.OwnerName),
