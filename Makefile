@@ -881,9 +881,6 @@ merge-locales:
 $(EXECUTABLE): $(GO_SOURCES) $(TAGS_PREREQ) | verify-version
 	CGO_CFLAGS="$(CGO_CFLAGS)" $(GO) build $(GOFLAGS) $(EXTRA_GOFLAGS) -tags '$(TAGS)' -ldflags '$(LDFLAGS)' -o $@
 
-forgejo: $(EXECUTABLE)
-	ln -f $(EXECUTABLE) forgejo
-
 static-executable: $(GO_SOURCES) $(TAGS_PREREQ) | verify-version
 	CGO_CFLAGS="$(CGO_CFLAGS)" $(GO) build $(GOFLAGS) $(EXTRA_GOFLAGS) -tags 'netgo osusergo $(TAGS)' -ldflags '-linkmode external -extldflags "-static" $(LDFLAGS)' -o $(EXECUTABLE)
 

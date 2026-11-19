@@ -543,6 +543,7 @@ type GetFeedsOptions struct {
 	OnlyPerformedByActor bool                   // only actions performed by the original actor
 	Date                 string                 // the day we want activity for: YYYY-MM-DD
 	RepoOwnerID          int64                  // action in repo
+	NoCount              bool                   // indicate no count should be returned.
 
 	// Filters repositories based upon optional authorization restrictions.
 	AuthorizationReducer     repo_model.RepositoryAuthorizationReducer
@@ -568,10 +569,17 @@ func GetFeeds(ctx context.Context, opts GetFeedsOptions) (ActionList, int64, err
 	opts.SetDefaultValues()
 	sess = db.SetSessionPagination(sess, &opts)
 
+	var count int64
 	actions := make([]*Action, 0, opts.PageSize)
-	count, err := sess.Desc("`action`.created_unix").FindAndCount(&actions)
-	if err != nil {
-		return nil, 0, fmt.Errorf("FindAndCount: %w", err)
+	if !opts.NoCount {
+		count, err = sess.Desc("`action`.created_unix").FindAndCount(&actions)
+		if err != nil {
+			return nil, 0, fmt.Errorf("FindAndCount: %w", err)
+		}
+	} else {
+		if err := sess.Desc("`action`.created_unix").Find(&actions); err != nil {
+			return nil, 0, fmt.Errorf("FindAndCount: %w", err)
+		}
 	}
 
 	if err := ActionList(actions).LoadAttributes(ctx); err != nil {

@@ -11,16 +11,17 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"runtime/trace"
 	"strings"
 	"time"
 
 	"forgejo.org/modules/container"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
+	"forgejo.org/services/otel"
 
 	"code.forgejo.org/xorm/xorm"
 	"code.forgejo.org/xorm/xorm/contexts"
+	"code.forgejo.org/xorm/xorm/core"
 	"code.forgejo.org/xorm/xorm/names"
 	"code.forgejo.org/xorm/xorm/schemas"
 
@@ -37,6 +38,7 @@ var (
 type Engine interface {
 	Table(tableNameOrBean any) *xorm.Session
 	Count(...any) (int64, error)
+	DB() *core.DB
 	Decr(column string, arg ...any) *xorm.Session
 	Delete(...any) (int64, error)
 	Truncate(...any) (int64, error)
@@ -99,6 +101,7 @@ type xormEngineInterface interface {
 	xorm.EngineInterface
 	SetDefaultContext(context.Context)
 	SetConnMaxIdleTime(time.Duration)
+	DB() *core.DB
 }
 
 // newXORMEngineGroup creates an xorm.EngineGroup (with one master and one or more slaves).
@@ -389,24 +392,26 @@ var _ contexts.Hook = &TracingHook{}
 type sqlTask struct{}
 
 func (TracingHook) BeforeProcess(c *contexts.ContextHook) (context.Context, error) {
-	ctx, task := trace.NewTask(c.Ctx, "sql")
-	ctx = context.WithValue(ctx, sqlTask{}, task)
-	trace.Log(ctx, "query", c.SQL)
-	trace.Logf(ctx, "args", "%v", c.Args)
+	ctx, span := otel.NewSpan(c.Ctx, "sql")
+	span.AddAttributeString("sql.query", c.SQL)
+	span.AddAttributeAnySliceString("sql.args", c.Args)
 	return ctx, nil
 }
 
 func (TracingHook) AfterProcess(c *contexts.ContextHook) error {
+	span := otel.SpanFromContext(c.Ctx)
 	if c.Result != nil {
 		if rowsAffected, err := c.Result.RowsAffected(); err == nil {
-			trace.Logf(c.Ctx, "rows affected", "%d", rowsAffected)
+			span.AddAttributeInt64("sql.rows_affected", rowsAffected)
 		}
 		if lastID, err := c.Result.LastInsertId(); err == nil {
-			trace.Logf(c.Ctx, "last insert id", "%d", lastID)
+			span.AddAttributeInt64("sql.last_insert_id", lastID)
 		}
 	}
 
-	c.Ctx.Value(sqlTask{}).(*trace.Task).End()
+	span.AddAttributeFloat64("query.execute_time", c.ExecuteTime.Seconds())
+	span.End()
+
 	return nil
 }
 
@@ -424,6 +429,9 @@ func (SlowQueryHook) BeforeProcess(c *contexts.ContextHook) (context.Context, er
 func (h *SlowQueryHook) AfterProcess(c *contexts.ContextHook) error {
 	if c.ExecuteTime >= h.Threshold {
 		h.Logger.Log(8, log.WARN, "[Slow SQL Query] %s %v - %v", c.SQL, c.Args, c.ExecuteTime)
+
+		span := otel.SpanFromContext(c.Ctx)
+		span.AddAttributeBool("query.slow", true)
 	}
 	return nil
 }

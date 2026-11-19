@@ -38,6 +38,7 @@ func NewActionsUserTestContext(t *testing.T, username, reponame string) APITestC
 	task.RepoID = repo.ID
 	task.OwnerID = repoOwner.ID
 	task.GenerateToken()
+	task.UpdateToken(db.DefaultContext)
 
 	actions_model.UpdateTask(db.DefaultContext, task)
 	return APITestContext{

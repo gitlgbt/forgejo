@@ -94,11 +94,17 @@ func ListRunners(ctx *context.APIContext, ownerID, repoID int64) {
 	}
 
 	listOptions := utils.GetListOptions(ctx)
+	isPrivate := false
+	if ctx.Repository() != nil {
+		isPrivate = ctx.Repository().IsPrivate
+	}
+
 	runners, total, err := db.FindAndCount[actions_model.ActionRunner](ctx, &actions_model.FindRunnerOptions{
 		OwnerID:     ownerID,
 		RepoID:      repoID,
 		ListOptions: listOptions,
 		WithVisible: ctx.FormBool("visible"),
+		IsPrivate:   isPrivate,
 	})
 	if err != nil {
 		ctx.Error(http.StatusInternalServerError, "FindCountRunners", map[string]string{})

@@ -4,10 +4,8 @@ package actions
 
 import (
 	"context"
-	"crypto/subtle"
 	"fmt"
 
-	auth_model "forgejo.org/models/auth"
 	"forgejo.org/models/db"
 	"forgejo.org/modules/util"
 
@@ -33,10 +31,7 @@ func RegisterRunner(ctx context.Context, ownerID, repoID int64, token string, la
 		//
 		// The runner exists, check if the rest of the token has changed.
 		//
-		mustUpdateSecret = subtle.ConstantTimeCompare(
-			[]byte(runner.TokenHash),
-			[]byte(auth_model.HashToken(token, runner.TokenSalt)),
-		) != 1
+		mustUpdateSecret = !runner.VerifyToken(token)
 	} else {
 		//
 		// The runner does not exist yet, create it
@@ -46,9 +41,7 @@ func RegisterRunner(ctx context.Context, ownerID, repoID int64, token string, la
 			AgentLabels: []string{},
 		}
 
-		if err := runner.UpdateSecret(token); err != nil {
-			return &runner, fmt.Errorf("can't set new runner's secret: %w", err)
-		}
+		runner.UpdateSecret(token)
 
 		if err := CreateRunner(ctx, &runner); err != nil {
 			return &runner, fmt.Errorf("can't create new runner %w", err)
@@ -71,9 +64,7 @@ func RegisterRunner(ctx context.Context, ownerID, repoID int64, token string, la
 		cols = append(cols, "agent_labels")
 	}
 	if mustUpdateSecret {
-		if err := runner.UpdateSecret(token); err != nil {
-			return &runner, fmt.Errorf("can't change runner's secret: %w", err)
-		}
+		runner.UpdateSecret(token)
 		cols = append(cols, "token_hash", "token_salt")
 	}
 

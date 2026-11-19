@@ -8,11 +8,12 @@ import (
 	"context"
 	"os/exec"
 	"runtime/pprof"
-	"runtime/trace"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"forgejo.org/services/otel"
 )
 
 // TODO: This packages still uses a singleton for the Manager.
@@ -182,7 +183,7 @@ func (pm *Manager) Add(ctx context.Context, description string, cancel context.C
 		parentPID = ""
 	}
 
-	ctx, traceTask := trace.NewTask(ctx, processType)
+	ctx, span := otel.NewSpan(ctx, processType)
 
 	process := &process{
 		PID:         pid,
@@ -191,7 +192,7 @@ func (pm *Manager) Add(ctx context.Context, description string, cancel context.C
 		Start:       start,
 		Cancel:      cancel,
 		Type:        processType,
-		TraceTrask:  traceTask,
+		Span:        span,
 	}
 
 	var finished FinishedFunc
@@ -212,6 +213,14 @@ func (pm *Manager) Add(ctx context.Context, description string, cancel context.C
 	pm.mutex.Unlock()
 
 	Trace(true, pid, description, parentPID, processType)
+
+	span.AddAttributeString("process.description", description)
+	span.AddAttributeString("process.pid", string(pid))
+	span.AddAttributeString("process.type", processType)
+
+	if parentPID != "" {
+		span.AddAttributeString("process.parent_pid", string(parentPID))
+	}
 
 	pprofCtx := pprof.WithLabels(ctx, pprof.Labels(DescriptionPProfLabel, description, PPIDPProfLabel, string(parentPID), PIDPProfLabel, string(pid), ProcessTypePProfLabel, processType))
 	if currentlyRunning {
@@ -244,7 +253,7 @@ func (pm *Manager) nextPID() (start time.Time, pid IDType) {
 }
 
 func (pm *Manager) remove(process *process) {
-	process.TraceTrask.End()
+	process.Span.End()
 	deleted := false
 
 	pm.mutex.Lock()

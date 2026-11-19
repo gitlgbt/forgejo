@@ -287,13 +287,13 @@ type Comment struct {
 	Line            int64 // - previous line / + proposed line
 	ExtraLinesCount int64 `xorm:"NOT NULL DEFAULT 0"` // number of additional lines after Line (0 = single line)
 	TreePath        string
-	Content         string        `xorm:"LONGTEXT"`
+	Content         string        `xorm:"TEXT"`
 	ContentVersion  int           `xorm:"NOT NULL DEFAULT 0"`
 	RenderedContent template.HTML `xorm:"-"`
 
 	// Path represents the 4 lines of code cemented by this comment
 	Patch       string `xorm:"-"`
-	PatchQuoted string `xorm:"LONGTEXT patch"`
+	PatchQuoted string `xorm:"TEXT patch"`
 
 	CreatedUnix timeutil.TimeStamp `xorm:"INDEX created"`
 	UpdatedUnix timeutil.TimeStamp `xorm:"INDEX updated"`
@@ -1002,6 +1002,19 @@ func (c *Comment) LoadPushCommits(ctx context.Context) (err error) {
 
 	var data PushActionContent
 
+	// Codeberg: We have a limit of 65535 bytes for the content field,
+	// this could mean the content was truncated and is no longer a valid JSON.
+	// We can easily detect this if the last byte is not '}', we then try a best
+	// effort to make it a valid JSON again.
+	if !strings.HasSuffix(c.Content, "}") {
+		// Find the last trailing comma of the last full commit ID.
+		lastComma := strings.LastIndexByte(c.Content, ',')
+		// Should always be true, but a error is better than a NPE.
+		if lastComma != -1 {
+			c.Content = c.Content[:lastComma] + "]}"
+		}
+	}
+
 	err = json.Unmarshal([]byte(c.Content), &data)
 	if err != nil {
 		return err
@@ -1046,7 +1059,7 @@ func CreateComment(ctx context.Context, opts *CreateCommentOptions) (_ *Comment,
 
 	e := db.GetEngine(ctx)
 	// codeberg-specific
-	if opts.Type == CommentTypeComment {
+	if opts.Type == CommentTypeComment && !opts.Repo.HasFlag(ctx, "disable-ratelimit") {
 		var factor int64 = 3
 		if time.Since(opts.Doer.CreatedUnix.AsTime()) < time.Hour*24*180 {
 			factor += 3
@@ -1463,17 +1476,28 @@ func DeleteComment(ctx context.Context, comment *Comment) error {
 
 // UpdateCommentsMigrationsByType updates comments' migrations information via given git service type and original id and poster id
 func UpdateCommentsMigrationsByType(ctx context.Context, tp structs.GitServiceType, originalAuthorID string, posterID int64) error {
-	_, err := db.GetEngine(ctx).Table("comment").
+	// Codeberg: Update query takes some time, make sure there's something that should be updated.
+	ids := make([]int64, 0, 8)
+	err := db.GetEngine(ctx).Table("comment").Select("comment.id").
 		Join("INNER", "issue", "issue.id = comment.issue_id").
 		Join("INNER", "repository", "issue.repo_id = repository.id").
 		Where("repository.original_service_type = ?", tp).
-		And("comment.original_author_id = ?", originalAuthorID).
-		Update(map[string]any{
-			"poster_id":          posterID,
-			"original_author":    "",
-			"original_author_id": 0,
-		})
-	return err
+		And("comment.original_author_id = ?", originalAuthorID).Find(&ids)
+	if err != nil {
+		return err
+	}
+
+	if len(ids) != 0 {
+		_, err := db.GetEngine(ctx).Table("comment").
+			In("comment.id", ids).
+			Update(map[string]any{
+				"poster_id":          posterID,
+				"original_author":    "",
+				"original_author_id": 0,
+			})
+		return err
+	}
+	return nil
 }
 
 // CreateAutoMergeComment is a internal function, only use it for CommentTypePRScheduledToAutoMerge and CommentTypePRUnScheduledToAutoMerge CommentTypes

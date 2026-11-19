@@ -15,3 +15,10 @@
   name: global-runner
   owner_id: 0
   repo_id: 0
+
+- id: 73714
+  uuid: 9e5f853d-c7d8-434b-a0fa-4868c2064cf0
+  name: global-public-runner
+  owner_id: 0
+  repo_id: 0
+  only_public: true

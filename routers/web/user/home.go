@@ -122,6 +122,7 @@ func Dashboard(ctx *context.Context) {
 		IncludePrivate:  true,
 		OnlyPerformedBy: false,
 		Date:            ctx.FormString("date"),
+		NoCount:         true,
 		ListOptions: db.ListOptions{
 			Page:     page,
 			PageSize: setting.UI.FeedPagingNum,

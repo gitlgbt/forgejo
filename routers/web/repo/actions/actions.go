@@ -91,6 +91,7 @@ func List(ctx *context.Context) {
 			RepoID:      ctx.Repo.Repository.ID,
 			IsOnline:    optional.Some(true),
 			WithVisible: true,
+			IsPrivate:   ctx.Repo.Repository.IsPrivate,
 		})
 		if err != nil {
 			ctx.ServerError("FindRunners", err)

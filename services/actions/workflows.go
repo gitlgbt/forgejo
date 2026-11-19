@@ -97,9 +97,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		title = fullWorkflowID
 	}
 
-	// Runner expects a `map[string]string` for inputs in in the payload dispatch, but newer code in the Runner's
-	// jobparser library takes a map[string]any which is more directly actionable for parsing:
-	inputs := make(map[string]string)
+	// The job parser preserves boolean dispatch inputs as booleans for expression evaluation.
 	inputsAny := make(map[string]any)
 	if workflowDispatch := wf.WorkflowDispatchConfig(); workflowDispatch != nil {
 		for key, input := range workflowDispatch.Inputs {
@@ -109,7 +107,6 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 			} else if err != nil {
 				return nil, nil, err
 			}
-			inputs[key] = value
 			inputsAny[key] = value
 			// To match the behaviour of the runner when parsing map[string]string into map[string]any, check for
 			// boolean type inputs and convert them to booleans for expression evaluation:
@@ -120,7 +117,7 @@ func (entry *Workflow) Dispatch(ctx context.Context, inputGetter InputValueGette
 		}
 	}
 
-	if int64(len(inputs)) > setting.Actions.LimitDispatchInputs {
+	if int64(len(inputsAny)) > setting.Actions.LimitDispatchInputs {
 		return nil, nil, errors.New("too many inputs")
 	}
 

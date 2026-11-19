@@ -84,9 +84,6 @@ func GetQueueSettings(rootCfg ConfigProvider, name string) (QueueSettings, error
 	if cfg.Length <= 0 {
 		cfg.Length = queueSettingsDefault.Length
 	}
-	if cfg.MaxWorkers <= 0 {
-		cfg.MaxWorkers = queueSettingsDefault.MaxWorkers
-	}
 	if cfg.BatchLength <= 0 {
 		cfg.BatchLength = queueSettingsDefault.BatchLength
 	}

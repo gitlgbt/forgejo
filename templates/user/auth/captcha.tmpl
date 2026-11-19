@@ -1,11 +1,11 @@
 {{if .EnableCaptcha}}{{if eq .CaptchaType "image"}}
-	<div class="inline field tw-text-center">
-		<input type="hidden" name="img-captcha-id" value="{{.Captcha}}">
-		<img style="transform: scaleX(-1);background-color: white" onclick="this.src=`{{AppSubUrl}}/captcha/{{.Captcha}}.png?reload=${Date.now()}`" class="captcha-img" src="{{AppSubUrl}}/captcha/{{.Captcha}}.png" alt="{{ctx.Locale.Tr "captcha"}}">
-	</div>
 	<div class="required field {{if .Err_Captcha}}error{{end}}">
-		<label for="captcha">{{ctx.Locale.Tr "captcha"}}</label>
-		<input id="captcha" name="img-captcha-response" autocomplete="off">
+		<label id="captcha-label" for="captcha">{{ctx.Locale.Tr "captcha"}}</label>
+		<div class="inline field tw-text-center">
+			<input type="hidden" name="img-captcha-id" value="{{.Captcha}}">
+			<img style="transform: scaleX(-1);background-color: white" onclick="this.src=`{{AppSubUrl}}/captcha/{{.Captcha}}.png?reload=${Date.now()}`" class="captcha-img" src="{{AppSubUrl}}/captcha/{{.Captcha}}.png" alt="{{ctx.Locale.Tr "captcha"}}">
+		</div>
+		<input id="captcha" name="img-captcha-response" autocomplete="off" aria-labelledby="captcha-label" required>
 	</div>
 {{else if eq .CaptchaType "recaptcha"}}
 	<div class="inline field tw-text-center required">

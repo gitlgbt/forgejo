@@ -5,8 +5,9 @@ package process
 
 import (
 	"context"
-	"runtime/trace"
 	"time"
+
+	"forgejo.org/services/otel"
 )
 
 var (
@@ -25,7 +26,7 @@ type process struct {
 	Start       time.Time
 	Cancel      context.CancelFunc
 	Type        string
-	TraceTrask  *trace.Task
+	Span        otel.Span
 }
 
 // ToProcess converts a process to a externally usable Process

@@ -25,6 +25,7 @@ import (
 	"forgejo.org/modules/setting"
 	"forgejo.org/routers"
 	"forgejo.org/routers/install"
+	"forgejo.org/services/otel"
 
 	"github.com/felixge/fgprof"
 	"github.com/urfave/cli/v3"
@@ -274,6 +275,12 @@ func runWeb(ctx context.Context, cli *cli.Command) error {
 		go servePprof()
 	}
 
+	shutdownFunc, err := otel.InitOtel(ctx)
+	if err != nil {
+		log.Fatal("Failed to initialize opentelemetry: %s", err.Error())
+	}
+
+	defer shutdownFunc(ctx)
 	return serveInstalled(ctx, cli)
 }
 

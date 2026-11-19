@@ -46,6 +46,7 @@ This repository contains code from:
 - [Forgejo](https://codeberg.org/forgejo/forgejo)
 - [git.gay's Forgejo fork](https://git.gay/gitgay/forgejo)
 - [Codefloe's Forgejo fork](https://codefloe.com/codefloe/forgejo-codefloe)
+- [CodeBerg's Forgejo fork](https://codeberg.org/Codeberg-Infrastructure/forgejo)
 - [Gitea](https://github.com/go-gitea/gitea)
 - [Gogs](https://github.com/gogs/gogs)
 <br>

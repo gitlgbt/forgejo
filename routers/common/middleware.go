@@ -6,7 +6,6 @@ package common
 import (
 	"fmt"
 	"net/http"
-	"runtime/trace"
 	"strings"
 
 	"forgejo.org/modules/cache"
@@ -15,6 +14,7 @@ import (
 	"forgejo.org/modules/web/middleware"
 	"forgejo.org/modules/web/routing"
 	"forgejo.org/services/context"
+	"forgejo.org/services/otel"
 
 	"code.forgejo.org/go-chi/session"
 	"github.com/chi-middleware/proxy"
@@ -44,13 +44,15 @@ func ProtocolMiddlewares() (handlers []any) {
 		return http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
 			ctx, _, finished := process.GetManager().AddTypedContext(req.Context(), fmt.Sprintf("%s: %s", req.Method, req.RequestURI), process.RequestProcessType, true)
 			defer finished()
-			trace.Log(ctx, "method", req.Method)
-			trace.Log(ctx, "url", req.RequestURI)
+
+			span := otel.SpanFromContext(ctx)
+			span.AddAttributeString("router.request.method", req.Method)
+			span.AddAttributeString("router.request.url", req.RequestURI)
 
 			respWriter := context.WrapResponseWriter(resp)
 			next.ServeHTTP(respWriter, req.WithContext(cache.WithCacheContext(ctx)))
 
-			trace.Logf(ctx, "status", "%d", respWriter.WrittenStatus())
+			span.AddAttributeInt("router.response.status", respWriter.WrittenStatus())
 		})
 	})
 

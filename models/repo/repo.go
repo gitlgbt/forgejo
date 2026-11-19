@@ -513,6 +513,14 @@ func (repo *Repository) AllUnitsEnabled(ctx context.Context) bool {
 
 // LoadOwner loads owner user
 func (repo *Repository) LoadOwner(ctx context.Context) (err error) {
+	if repo == nil {
+		// Normally, this code shouldn't be hit because access checks are done
+		// before. Unfortunately, this code somehow gets hit in prod by one
+		// specific repository while pushing. This just prevents Forgejo from
+		// panicing in the meantime.
+		return errors.New("Repo is nil")
+	}
+
 	if repo.Owner != nil {
 		return nil
 	}

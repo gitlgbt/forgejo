@@ -11,8 +11,10 @@ import (
 	"mime/multipart"
 	"os"
 	"path"
+	"strings"
 
 	"forgejo.org/models/db"
+	"forgejo.org/models/moderation"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/util"
@@ -62,7 +64,7 @@ func (upload *Upload) LocalPath() string {
 }
 
 // NewUpload creates a new upload object.
-func NewUpload(ctx context.Context, name string, buf []byte, file multipart.File) (_ *Upload, err error) {
+func NewUpload(ctx context.Context, name string, buf []byte, file multipart.File, repo *Repository) (_ *Upload, err error) {
 	upload := &Upload{
 		UUID: gouuid.New().String(),
 		Name: name,
@@ -79,14 +81,35 @@ func NewUpload(ctx context.Context, name string, buf []byte, file multipart.File
 	}
 	defer fw.Close()
 
-	if _, err = fw.Write(buf); err != nil {
+	buffer := &strings.Builder{}
+
+	mw := io.MultiWriter(fw, buffer)
+	if _, err = mw.Write(buf); err != nil {
 		return nil, fmt.Errorf("Write: %w", err)
-	} else if _, err = io.Copy(fw, file); err != nil {
+	} else if _, err = io.Copy(mw, file); err != nil {
 		return nil, fmt.Errorf("Copy: %w", err)
 	}
 
 	if _, err := db.GetEngine(ctx).Insert(upload); err != nil {
 		return nil, err
+	}
+
+	pattern := setting.ContentPatterns()
+	if pattern != nil && !repo.IsPrivate {
+		w := &setting.RememberSecondWriteWriter{}
+		_, _ = pattern.WriteString(w, buffer.String())
+		if w.Writecount == 2 {
+			report := moderation.AbuseReport{
+				ReporterID:  25240,
+				ContentType: moderation.ReportedContentTypeRepository,
+				ContentID:   repo.ID,
+				Category:    moderation.AbuseCategoryTypeIllegalContent,
+				Remarks:     "Automated abuse report, pattern found in file uploaded via web UI: " + buffer.String()[w.Idx:w.End],
+			}
+			if err := moderation.ReportAbuse(ctx, &report); err != nil {
+				log.Error("Cannot report abuse %-v: %v", report, err)
+			}
+		}
 	}
 
 	return upload, nil

@@ -4,8 +4,8 @@
 package context
 
 import (
-	"fmt"
 	"sync"
+	"strings"
 
 	"forgejo.org/modules/base"
 	"forgejo.org/modules/cache"
@@ -51,6 +51,24 @@ func (c *imageCaptchaStore) Get(id string, clear bool) (digits []byte) {
 	return []byte(val)
 }
 
+// GetCaptchaService gets captcha service by service ID.
+func GetCaptchaService(ctx *Context) string {
+	switch setting.Service.CaptchaType {
+	case setting.ImageCaptcha:
+		return "image"
+	case setting.ReCaptcha:
+		return "recaptcha"
+	case setting.HCaptcha:
+		return "hcaptcha"
+	case setting.MCaptcha:
+		return "mcaptcha"
+	case setting.CfTurnstile:
+		return "cfturnstile"
+	default:
+		return "service"
+	}
+}
+
 // GetImageCaptcha returns image captcha ID.
 func GetImageCaptcha() string {
 	imageCaptchaOnce.Do(func() {
@@ -64,6 +82,7 @@ func SetCaptchaData(ctx *Context) {
 	if !setting.Service.EnableCaptcha {
 		return
 	}
+	ctx.Data["CaptchaServiceProvider"] = GetCaptchaService(ctx)
 	ctx.Data["EnableCaptcha"] = setting.Service.EnableCaptcha
 	ctx.Data["RecaptchaURL"] = setting.Service.RecaptchaURL
 	ctx.Data["Captcha"] = GetImageCaptcha()
@@ -74,6 +93,14 @@ func SetCaptchaData(ctx *Context) {
 	ctx.Data["McaptchaURL"] = setting.Service.McaptchaURL
 	ctx.Data["FrcCaptchaSitekey"] = setting.Service.FrcCaptchaSitekey
 	ctx.Data["CfTurnstileSitekey"] = setting.Service.CfTurnstileSitekey
+}
+
+func VerifyDummy(ctx *Context, response string, captchaID string) bool {
+	// accept dummy input in dev mode
+	if !setting.IsProd || strings.Contains(strings.ToLower(strings.TrimSpace(captchaID)), ctx.Data["CaptchaServiceProvider"].(string))  {
+		return true
+	}
+	return captcha.VerifyString(response, captchaID)
 }
 
 const (
@@ -95,22 +122,21 @@ func VerifyCaptcha(ctx *Context, tpl base.TplName, form any) {
 
 	var valid bool
 	var err error
-	switch setting.Service.CaptchaType {
-	case setting.ImageCaptcha:
+	switch ctx.Data["CaptchaServiceProvider"] {
+	case "image":
 		valid = captcha.VerifyString(ctx.Req.Form.Get(imgCaptchaIDField), ctx.Req.Form.Get(imgCaptchaResponseField))
-	case setting.ReCaptcha:
+	case "recaptcha":
 		valid, err = recaptcha.Verify(ctx, ctx.Req.Form.Get(gRecaptchaResponseField))
-	case setting.HCaptcha:
+	case "hcaptcha":
 		valid, err = hcaptcha.Verify(ctx, ctx.Req.Form.Get(hCaptchaResponseField))
-	case setting.MCaptcha:
+	case "mcaptcha":
 		valid, err = mcaptcha.Verify(ctx, ctx.Req.Form.Get(mCaptchaResponseField))
-	case setting.CfTurnstile:
+	case "cfturnstile":
 		valid, err = turnstile.Verify(ctx, ctx.Req.Form.Get(cfTurnstileResponseField))
 	case setting.FrcCaptcha:
 		valid, err = frccaptcha.Verify(ctx, ctx.Req.Form.Get(frcCaptchaResponseField))
 	default:
-		ctx.ServerError("Unknown Captcha Type", fmt.Errorf("unknown Captcha Type: %s", setting.Service.CaptchaType))
-		return
+		valid = VerifyDummy(ctx, ctx.Req.Form.Get(imgCaptchaIDField), ctx.Req.Form.Get(imgCaptchaResponseField))
 	}
 	if err != nil {
 		log.Debug("Captcha Verify failed: %v", err)

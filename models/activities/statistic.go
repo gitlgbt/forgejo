@@ -5,6 +5,8 @@ package activities
 
 import (
 	"context"
+	"sync"
+	"time"
 
 	asymkey_model "forgejo.org/models/asymkey"
 	"forgejo.org/models/auth"
@@ -19,6 +21,40 @@ import (
 	"forgejo.org/models/webhook"
 	"forgejo.org/modules/setting"
 )
+
+// Codeberg custom
+type StatsSimple struct {
+	Users int64
+	Repos int64
+}
+
+var (
+	statsSimpleMu sync.RWMutex
+	statsSimple   StatsSimple
+	lastLoaded    time.Time
+)
+
+func GetStatsSimple(ctx context.Context) StatsSimple {
+	// Fast path
+	statsSimpleMu.RLock()
+	canUseCache := time.Now().Add(-time.Minute).Before(lastLoaded)
+	if canUseCache {
+		defer statsSimpleMu.RUnlock()
+		return statsSimple
+	}
+	statsSimpleMu.RUnlock()
+	// Slow path
+	statsSimpleMu.Lock()
+	defer statsSimpleMu.Unlock()
+
+	var stats StatsSimple
+	stats.Users = user_model.CountUsers(ctx, nil)
+	stats.Repos, _ = repo_model.CountRepositories(ctx, repo_model.CountRepositoryOptions{})
+
+	statsSimple = stats
+	lastLoaded = time.Now()
+	return stats
+}
 
 // Statistic contains the database statistics
 type Statistic struct {

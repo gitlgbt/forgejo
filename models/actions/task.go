@@ -40,7 +40,7 @@ type ActionTask struct {
 
 	Token          string `xorm:"-"`
 	TokenHash      string `xorm:"UNIQUE"` // sha256 of token
-	TokenSalt      string
+	TokenSalt      string // Deprecated: TokenHash is no longer salted, this is only non-empty for pre-existing hashes
 	TokenLastEight string `xorm:"index token_last_eight"`
 
 	LogFilename  string     // file name of log
@@ -152,7 +152,8 @@ func (task *ActionTask) LoadAttributes(ctx context.Context) error {
 }
 
 func (task *ActionTask) GenerateToken() {
-	task.Token, task.TokenSalt, task.TokenHash, task.TokenLastEight = generateSaltedToken()
+	task.TokenSalt = ""
+	task.Token, task.TokenHash, task.TokenLastEight = generateToken()
 }
 
 // After using GenerateToken, UpdateToken can be used to update the database record affecting the same columns.
@@ -242,8 +243,13 @@ func GetRunningTaskByToken(ctx context.Context, token string) (*ActionTask, erro
 	}
 
 	for _, t := range tasks {
-		tempHash := auth_model.HashToken(token, t.TokenSalt)
-		if subtle.ConstantTimeCompare([]byte(t.TokenHash), []byte(tempHash)) == 1 {
+		var hash string
+		if t.TokenSalt != "" {
+			hash = auth_model.HashToken(token, t.TokenSalt)
+		} else {
+			hash = auth_model.HashValidator([]byte(token))
+		}
+		if subtle.ConstantTimeCompare([]byte(t.TokenHash), []byte(hash)) == 1 {
 			if successfulTokenTaskCache != nil {
 				successfulTokenTaskCache.Add(token, t.ID)
 			}
@@ -324,6 +330,11 @@ func GetAvailableJobsForRunner(e db.Engine, runner *ActionRunner) ([]*ActionRunJ
 	if setting.Actions.ConcurrencyGroupQueueEnabled {
 		jobCond = jobCond.And(getConcurrencyCondition())
 	}
+
+	if runner.OnlyPublic {
+		jobCond = jobCond.And(builder.Eq{"`repository`.is_private": false})
+	}
+
 	if jobCond.IsValid() {
 		// It is *likely* more efficient to use an EXISTS query here rather than an IN clause, as that allows the
 		// database's query optimizer to perform partial computation of the subquery rather than complete computation.
@@ -343,6 +354,7 @@ func GetAvailableJobsForRunner(e db.Engine, runner *ActionRunner) ([]*ActionRunJ
 	if err := e.
 		Join("INNER", "action_run", "action_run_job.run_id = action_run.id").
 		Join("INNER", "repo_unit", "action_run_job.repo_id = repo_unit.repo_id").
+		Join("INNER", "repository", "action_run_job.repo_id = repository.id").
 		Where("task_id=? AND action_run_job.status=? AND `repo_unit`.type=?", 0, StatusWaiting, unit.TypeActions).
 		And(jobCond).
 		Desc("action_run.priority").

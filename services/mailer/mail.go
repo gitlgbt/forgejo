@@ -430,6 +430,11 @@ func createMessageIDForRelease(rel *repo_model.Release) string {
 
 func generateAdditionalHeaders(ctx *mailCommentContext, reason string, recipient *user_model.User) map[string]string {
 	repo := ctx.Issue.Repo
+	// Codeberg custom
+	newuser := "false"
+	if ctx.Doer.CreatedUnix.AsTime().Add(setting.Service.UserDeleteWithCommentsMaxTime).After(time.Now()) {
+		newuser = "true"
+	}
 
 	return map[string]string{
 		// https://datatracker.ietf.org/doc/html/rfc2919
@@ -468,6 +473,9 @@ func generateAdditionalHeaders(ctx *mailCommentContext, reason string, recipient
 		"X-GitLab-Project":            repo.Name,
 		"X-GitLab-Project-Path":       repo.FullName(),
 		"X-GitLab-Issue-IID":          strconv.FormatInt(ctx.Issue.Index, 10),
+
+		// Codeberg custom
+		"X-Codeberg-Newuser": newuser,
 	}
 }
 

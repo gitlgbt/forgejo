@@ -94,7 +94,7 @@ func TestActionsNotifier_IssueCommentOnForkPullRequestEvent(t *testing.T) {
 
 	unittest.AssertSuccessfulDelete(t, &actions_model.ActionRun{RepoID: repo.ID})
 
-	err := handleWorkflows(db.DefaultContext, detectedWorkflows, commit, input, "")
+	err := handleWorkflows(db.DefaultContext, detectedWorkflows, commit, input, "", "")
 	require.NoError(t, err)
 
 	runs, err := db.Find[actions_model.ActionRun](db.DefaultContext, actions_model.FindRunOptions{
@@ -137,7 +137,7 @@ func testActionsNotifierPullRequestWithDoer(t *testing.T, repo *repo_model.Repos
 		Payload:     &api.PullRequestPayload{},
 	}
 
-	err := handleWorkflows(db.DefaultContext, detectedWorkflows, commit, input, "refs/head/main")
+	err := handleWorkflows(db.DefaultContext, detectedWorkflows, commit, input, "refs/head/main", "")
 	require.NoError(t, err)
 }
 

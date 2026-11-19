@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"code.forgejo.org/xorm/xorm"
 	"forgejo.org/models/db"
 	git_model "forgejo.org/models/git"
 	org_model "forgejo.org/models/organization"
@@ -1111,22 +1112,23 @@ func TokenizeCodeOwnersLine(line string) []string {
 
 // InsertPullRequests inserted pull requests
 func InsertPullRequests(ctx context.Context, prs ...*PullRequest) error {
-	ctx, committer, err := db.TxContext(ctx)
-	if err != nil {
-		return err
-	}
-	defer committer.Close()
-	sess := db.GetEngine(ctx)
-	for _, pr := range prs {
-		if err := insertIssue(ctx, pr.Issue); err != nil {
-			return err
+	return db.RetryTx(ctx, db.RetryConfig{
+		// Has been observed to deadlock with stats module when it's recalculating issue labels count.
+		// 2 attemps should be sufficient, 3 sounds nicer :)
+		AttemptCount: 3,
+		ErrorIs:      []error{xorm.ErrDeadlock},
+	}, func(ctx context.Context) error {
+		for _, pr := range prs {
+			if err := insertIssue(ctx, pr.Issue); err != nil {
+				return err
+			}
+			pr.IssueID = pr.Issue.ID
+			if _, err := db.GetEngine(ctx).NoAutoTime().Insert(pr); err != nil {
+				return err
+			}
 		}
-		pr.IssueID = pr.Issue.ID
-		if _, err := sess.NoAutoTime().Insert(pr); err != nil {
-			return err
-		}
-	}
-	return committer.Commit()
+		return nil
+	})
 }
 
 // GetPullRequestByMergedCommit returns a merged pull request by the given commit

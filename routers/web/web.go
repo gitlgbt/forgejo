@@ -64,7 +64,6 @@ import (
 	chi_middleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/klauspost/compress/gzhttp"
-	"github.com/prometheus/client_golang/prometheus"
 )
 
 var GzipMinSize = gzhttp.DefaultMinSize
@@ -404,7 +403,7 @@ func Routes() *web.Route {
 	}
 
 	if setting.Metrics.Enabled {
-		prometheus.MustRegister(metrics.NewCollector())
+		metrics.Register()
 		routes.Get("/metrics", gzipMid, Metrics)
 	}
 
@@ -1431,7 +1430,11 @@ func registerRoutes(m *web.Route) {
 	// Grouping for those endpoints that do require authentication
 	m.Group("/{username}/{reponame}", func() {
 		if !setting.Repository.DisableForks {
-			m.Combo("/fork", reqRepoCodeReader).Get(repo.Fork).
+			m.Combo("/fork", reqRepoCodeReader, func(ctx *context.Context) {
+				if ctx.Data["DiscouragesForking"].(bool) {
+					ctx.Redirect("https://forgejo.org/docs/latest/user/agit-support/")
+				}
+			}).Get(repo.Fork).
 				Post(web.Bind(forms.CreateRepoForm{}), repo.ForkPost)
 		}
 		m.Group("/issues", func() {
@@ -1790,7 +1793,7 @@ func registerRoutes(m *web.Route) {
 					m.Post("/remove", context.RepoMustNotBeArchived(), repo.RemoveCommitNotesPullRequest)
 				}, reqSignIn, reqRepoCodeWriter)
 			})
-			m.Post("/merge", context.RepoMustNotBeArchived(), web.Bind(forms.MergePullRequestForm{}), context.EnforceQuotaWeb(quota_model.LimitSubjectSizeGitAll, context.QuotaTargetRepo), repo.MergePullRequest)
+			m.Post("/merge", context.RepoMustNotBeArchived(), web.Bind(forms.MergePullRequestForm{}), context.EnforceQuotaWeb(quota_model.LimitSubjectSizeReposAll, context.QuotaTargetRepo), repo.MergePullRequest)
 			m.Post("/cancel_auto_merge", context.RepoMustNotBeArchived(), repo.CancelAutoMergePullRequest)
 			m.Post("/update", repo.UpdatePullRequest)
 			m.Post("/set_allow_maintainer_edit", web.Bind(forms.UpdateAllowEditsForm{}), repo.SetAllowEdits)

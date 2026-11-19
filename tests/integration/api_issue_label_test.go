@@ -162,6 +162,7 @@ func TestAPIRemoveIssueLabel(t *testing.T) {
 	task.RepoID = repo.ID
 	task.OwnerID = repo.OwnerID
 	task.GenerateToken()
+	task.UpdateToken(t.Context())
 	actions_model.UpdateTask(t.Context(), task)
 
 	deleteURL := fmt.Sprintf("/api/v1/repos/%s/%s/issues/%d/labels/%d", owner.Name, repo.Name, issue.Index, issueLabel.LabelID)
@@ -218,6 +219,7 @@ func TestAPIRemoveIssueLabelByName(t *testing.T) {
 	task.RepoID = repo.ID
 	task.OwnerID = repo.OwnerID
 	task.GenerateToken()
+	task.UpdateToken(t.Context())
 	actions_model.UpdateTask(t.Context(), task)
 
 	deleteURL := fmt.Sprintf("/api/v1/repos/%s/%s/issues/%d/labels/%s", owner.Name, repo.Name, issue.Index, repoLabel.Name)

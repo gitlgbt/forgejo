@@ -1284,18 +1284,17 @@ func TestActionsWorkflowDispatchDynamicMatrix(t *testing.T) {
 			Name:      "repo-workflow-dispatch",
 			LatestSha: &sha,
 			Files: forgery.MapFS{
-				".forgejo/workflows/dispatch.yml": forgery.MapFile(`
-name: test
-on: [workflow_dispatch]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dim1: "${{ fromJSON(needs.other-job.outputs.some-output) }}"
-    steps:
-      - run: echo helloworld
-`,
+				".forgejo/workflows/dispatch.yml": forgery.MapFile(
+					"name: test\n" +
+						"on: [workflow_dispatch]\n" +
+						"jobs:\n" +
+						"  test:\n" +
+						"    runs-on: ubuntu-latest\n" +
+						"    strategy:\n" +
+						"      matrix: \n" +
+						"        dim1: \"${{ fromJSON(needs.other-job.outputs.some-output) }}\"\n" +
+						"    steps:\n" +
+						"      - run: echo helloworld\n",
 				),
 			},
 		})
@@ -1335,24 +1334,23 @@ func TestActionsWorkflowDispatchDynamicMatrixBooleanInput(t *testing.T) {
 			Name:      "repo-workflow-dispatch",
 			LatestSha: &sha,
 			Files: forgery.MapFS{
-				".forgejo/workflows/dispatch.yml": forgery.MapFile(`
-name: test
-on:
-  workflow_dispatch:
-    inputs:
-      win32:
-        description: 'Boolean'
-        required: false
-        type: boolean
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        runner: ${{ fromJSON(inputs.win32 && '["win32", "win64"]' || '["win64"]') }}
-    steps:
-      - run: echo helloworld
-`,
+				".forgejo/workflows/dispatch.yml": forgery.MapFile(
+					"name: test\n" +
+						"on:\n" +
+						"  workflow_dispatch:\n" +
+						"    inputs:\n" +
+						"      win32:\n" +
+						"        description: 'Boolean'\n" +
+						"        required: false\n" +
+						"        type: boolean\n" +
+						"jobs:\n" +
+						"  test:\n" +
+						"    runs-on: ubuntu-latest\n" +
+						"    strategy:\n" +
+						"      matrix:\n" +
+						"        runner: ${{ fromJSON(inputs.win32 && '[\"win32\", \"win64\"]' || '[\"win64\"]') }}\n" +
+						"    steps:\n" +
+						"      - run: echo helloworld\n",
 				),
 			},
 		})

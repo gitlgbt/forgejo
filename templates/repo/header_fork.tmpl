@@ -1,5 +1,10 @@
 {{with .Repository}}
 {{if and (not .IsEmpty) ($.Permission.CanRead $.UnitTypeCode)}}
+{{if $.DiscouragesForking}}
+	<div class="ui labeled button">
+		<a class="ui compact small basic button tw-rounded-r-[inherit]" target="_blank" rel="noopener noreferrer" href="https://forgejo.org/docs/latest/user/agit-support/">{{svg "octicon-repo-forked"}}<span class="text not-mobile">AGit {{ctx.Locale.Tr "repo.fork"}}</span></a>
+    </div>
+{{else}}
 	<div class="ui labeled button
 		{{if or (not $.IsSigned) (and (not $.CanSignedUserFork) (not $.UserAndOrgForks))}}
 			disabled
@@ -50,5 +55,6 @@
 			{{CountFmt .NumForks}}
 		</a>
 	</div>
+{{end}}
 {{end}}
 {{end}}

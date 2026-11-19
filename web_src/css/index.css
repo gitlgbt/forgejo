@@ -57,6 +57,7 @@
 @import "./markup/codecopy.css";
 @import "./markup/asciicast.css";
 @import "./markup/filepreview.css";
+@import "./markup/markless.css";
 
 @import "./chroma/base.css";
 @import "./codemirror/base.css";
@@ -93,4 +94,5 @@
 
 @import "./gitlgbt/index.css";
 @import "./helpers.css";
+
 @tailwind utilities;

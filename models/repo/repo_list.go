@@ -494,6 +494,11 @@ func SearchRepositoryCondition(opts *SearchRepoOptions) builder.Cond {
 		// Always hide repo's that are empty
 		subQueryCond = subQueryCond.And(builder.Eq{"is_empty": false})
 
+		// Codeberg: Hide repos with no stars by default
+		if opts.Keyword == "" {
+			subQueryCond = subQueryCond.And(builder.Gt{"num_stars": 0})
+		}
+
 		cond = cond.And(subQueryCond)
 	}
 

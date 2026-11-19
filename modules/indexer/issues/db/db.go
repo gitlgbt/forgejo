@@ -54,7 +54,7 @@ func (i *Indexer) Search(ctx context.Context, options *internal.SearchOptions) (
 
 	var priorityIssueIndex int64
 	if len(options.Tokens) != 0 {
-		repoCond := builder.In("repo_id", options.RepoIDs)
+		repoCond := options.RepoCond.ValueOrDefault(builder.In("repo_id", options.RepoIDs))
 		if len(options.RepoIDs) == 1 {
 			repoCond = builder.Eq{"repo_id": options.RepoIDs[0]}
 		}

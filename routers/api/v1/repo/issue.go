@@ -30,6 +30,7 @@ import (
 	"forgejo.org/services/context"
 	"forgejo.org/services/convert"
 	issue_service "forgejo.org/services/issue"
+	"xorm.io/builder"
 )
 
 // SearchIssues searches for issues across the repositories that the user has access to
@@ -154,6 +155,7 @@ func SearchIssues(ctx *context.APIContext) {
 
 	var (
 		repoIDs   []int64
+		repoCond  builder.Cond
 		allPublic bool
 	)
 	{
@@ -210,6 +212,7 @@ func SearchIssues(ctx *context.APIContext) {
 			allPublic = true
 			opts.AllPublic = false // set it false to avoid returning too many repos, we could filter by indexer
 		}
+		repoCond = builder.In("repo_id", builder.Select("id").From("repository").Where(repo_model.SearchRepositoryCondition(opts)))
 		repoIDs, _, err = repo_model.SearchRepositoryIDs(ctx, opts)
 		if err != nil {
 			ctx.Error(http.StatusInternalServerError, "SearchRepositoryIDs", err)
@@ -279,6 +282,7 @@ func SearchIssues(ctx *context.APIContext) {
 			Page:     ctx.FormInt("page"),
 		},
 		RepoIDs:             repoIDs,
+		RepoCond:            optional.Some(repoCond),
 		AllPublic:           allPublic,
 		IsPull:              isPull,
 		IsClosed:            isClosed,

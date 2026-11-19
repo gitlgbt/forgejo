@@ -41,6 +41,7 @@ var (
 	PasswordCheckPwn                   bool
 	SuccessfulTokensCacheSize          int
 	DisableQueryAuthToken              bool
+	TokenHashCacheSize                 int
 )
 
 /*
@@ -517,6 +518,7 @@ func loadSecurityFrom(rootCfg ConfigProvider) {
 
 	PasswordCheckPwn = sec.Key("PASSWORD_CHECK_PWN").MustBool(false)
 	SuccessfulTokensCacheSize = sec.Key("SUCCESSFUL_TOKENS_CACHE_SIZE").MustInt(20)
+	TokenHashCacheSize = sec.Key("TOKEN_HASH_CACHE_SIZE").MustInt()
 
 	cfgdata := sec.Key("PASSWORD_COMPLEXITY").Strings(",")
 	if len(cfgdata) == 0 {

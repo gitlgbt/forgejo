@@ -10,6 +10,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"forgejo.org/models"
@@ -28,6 +29,7 @@ import (
 	"forgejo.org/modules/setting"
 	api "forgejo.org/modules/structs"
 	"forgejo.org/modules/util"
+	"golang.org/x/sys/unix"
 )
 
 // CreateRepositoryByExample creates a repository for the user/organization.
@@ -168,8 +170,39 @@ func CreateRepositoryByExample(ctx context.Context, doer, u *user_model.User, re
 
 const notRegularFileMode = os.ModeSymlink | os.ModeNamedPipe | os.ModeSocket | os.ModeDevice | os.ModeCharDevice | os.ModeIrregular
 
+// getDirectorySizeCephFS calculates the size of a directory by making use of
+// CephFS's recursive accounting.
+// https://www.kernel.org/doc/html/latest/filesystems/ceph.html#:~:text=Ceph%20also%20provides%20some%20recursive%20accounting
+func getDirectorySizeCephFS(path string) (uint64, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+
+	var buf [20]byte
+	n, err := unix.Fgetxattr(int(f.Fd()), "ceph.dir.rbytes", buf[:])
+	if err != nil {
+		return 0, err
+	}
+
+	size, err := strconv.ParseUint(string(buf[:n]), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return size, nil
+}
+
 // getDirectorySize returns the disk consumption for a given path
 func getDirectorySize(path string) (int64, error) {
+	// Codeberg patch: If directory is located on CephFS use fast-path.
+	if size, err := getDirectorySizeCephFS(path); err != nil {
+		log.Error("getDirectorySizeCephFS: %v", err)
+		// fallback to slow method.
+	} else {
+		return int64(size), nil
+	}
+
 	var size int64
 	err := filepath.WalkDir(path, func(_ string, entry os.DirEntry, err error) error {
 		if os.IsNotExist(err) { // ignore the error because some files (like temp/lock file) may be deleted during traversing.

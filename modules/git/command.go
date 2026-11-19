@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"runtime/trace"
 	"strings"
 	"time"
 
@@ -324,7 +323,6 @@ func (c *Command) Run(opts *RunOpts) error {
 	}
 	defer finished()
 
-	trace.Log(ctx, "command", desc)
 	startTime := time.Now()
 
 	cmd := exec.CommandContext(ctx, c.prog, c.args...)
@@ -340,6 +338,11 @@ func (c *Command) Run(opts *RunOpts) error {
 	cmd.Stdout = opts.Stdout
 	cmd.Stderr = opts.Stderr
 	cmd.Stdin = opts.Stdin
+	// Codeberg: force the command to be exited after 30 seconds after it was
+	// observed to be done (or after context.Done was called). From internal
+	// stacktraces we have seen that ghost os/exec.Cmd (exclusively Git processes)
+	// are still alive because of waiting to close a stdout/stderr/stdin pipe.
+	cmd.WaitDelay = time.Second * 30
 	if err := cmd.Start(); err != nil {
 		return err
 	}
