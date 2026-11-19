@@ -57,13 +57,13 @@ RUN chmod 644 /go/src/forgejo.org/contrib/autocompletion/bash_autocomplete
 
 FROM data.forgejo.org/oci/alpine:3.24
 ARG RELEASE_VERSION
-LABEL maintainer="contact@forgejo.org" \
-      org.opencontainers.image.authors="Forgejo" \
-      org.opencontainers.image.url="https://forgejo.org" \
-      org.opencontainers.image.documentation="https://forgejo.org/download/#container-image" \
-      org.opencontainers.image.source="https://codeberg.org/forgejo/forgejo" \
+LABEL maintainer="mail@git.lgbt" \
+      org.opencontainers.image.authors="gitlgbt" \
+      org.opencontainers.image.url="https://git.lgbt" \
+      org.opencontainers.image.documentation="https://git.lgbt/gitlgbt/forgejo/wiki" \
+      org.opencontainers.image.source="https://git.lgbt/gitlgbt/forgejo" \
       org.opencontainers.image.version="${RELEASE_VERSION}" \
-      org.opencontainers.image.vendor="Forgejo" \
+      org.opencontainers.image.vendor="gitlgbt" \
       org.opencontainers.image.licenses="GPL-3.0-or-later" \
       org.opencontainers.image.title="Forgejo. Beyond coding. We forge." \
       org.opencontainers.image.description="Forgejo is a self-hosted lightweight software forge. Easy to install and low maintenance, it just does the job."
