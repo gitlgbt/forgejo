@@ -1,7 +1,12 @@
-{{if .HeatmapData}}
+{{if or .HeatmapData .HeatmapYear .HeatmapOrg}}
 	<div id="user-heatmap" class="is-loading"
 		data-heatmap-data="{{JsonUtils.EncodeToString .HeatmapData}}"
+		data-end-date="{{.HeatmapEndDate}}"
+		{{if .HeatmapYear}}
+		data-locale-total-contributions="{{ctx.Locale.Tr "heatmap.number_of_contributions_in_year" (ctx.Locale.PrettyNumber .HeatmapTotalContributions) (print .HeatmapYear)}}"
+		{{else}}
 		data-locale-total-contributions="{{ctx.Locale.Tr "heatmap.number_of_contributions_in_the_last_12_months" (ctx.Locale.PrettyNumber .HeatmapTotalContributions)}}"
+		{{end}}
 		data-locale-contributions-zero="{{ctx.Locale.Tr "heatmap.contributions_zero"}}"
 		data-locale-contributions-format="{{ctx.Locale.Tr "heatmap.contributions_format"}}"
 		data-locale-contributions-one="{{ctx.Locale.Tr "heatmap.contributions_one"}}"
@@ -9,5 +14,33 @@
 		data-locale-more="{{ctx.Locale.Tr "heatmap.more"}}"
 		data-locale-less="{{ctx.Locale.Tr "heatmap.less"}}"
 	></div>
+	{{if and .PageIsUserProfile .HeatmapYears .HeatmapOrgs .HasOrgsVisible}}
+		<div class="user-heatmap-orgs tw-flex tw-flex-wrap tw-items-center tw-gap-2 tw-mt-3">
+			{{range $i, $_ := .HeatmapOrgs}}
+				{{if lt $i 3}}
+					{{if (or .Visibility.IsPublic (and ($.SignedUser) (or .Visibility.IsLimited (and (.HasMemberWithUserID ctx $.SignedUserID) .Visibility.IsPrivate) ($.IsAdmin))))}}
+						{{$sel := eq (print $.HeatmapOrg) .Name}}
+						<a class="ui small label tw-m-0 tw-inline-flex tw-items-center tw-gap-1 tw-border tw-border-solid {{if $sel}}tw-bg-[var(--color-primary)] tw-border-[var(--color-primary)] tw-text-[var(--color-primary-contrast)]{{else}}tw-bg-transparent tw-border-[var(--color-secondary)]{{end}}" href="{{$.ContextUser.HomeLink}}?tab=overview{{if $.HeatmapYear}}&year={{$.HeatmapYear}}{{end}}{{if not $sel}}&org={{.Name}}{{end}}">{{ctx.AvatarUtils.Avatar . 16}} @{{.Name}}</a>
+					{{end}}
+				{{end}}
+			{{end}}
+			{{if gt (len .HeatmapOrgs) 3}}
+				<div class="ui dropdown">
+					<span class="text">{{ctx.Locale.Tr "heatmap.more"}}</span>
+					{{svg "octicon-triangle-down" 14 "dropdown icon"}}
+					<div class="menu">
+						{{range $i, $_ := .HeatmapOrgs}}
+							{{if ge $i 3}}
+								{{if (or .Visibility.IsPublic (and ($.SignedUser) (or .Visibility.IsLimited (and (.HasMemberWithUserID ctx $.SignedUserID) .Visibility.IsPrivate) ($.IsAdmin))))}}
+									{{$sel := eq (print $.HeatmapOrg) .Name}}
+									<a class="item{{if $sel}} active{{end}}" href="{{$.ContextUser.HomeLink}}?tab=overview{{if $.HeatmapYear}}&year={{$.HeatmapYear}}{{end}}{{if not $sel}}&org={{.Name}}{{end}}">{{ctx.AvatarUtils.Avatar . 16}} @{{.Name}}</a>
+								{{end}}
+							{{end}}
+						{{end}}
+					</div>
+				</div>
+			{{end}}
+		</div>
+	{{end}}
 	<div class="divider"></div>
 {{end}}

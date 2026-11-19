@@ -1,0 +1,8 @@
+{{/* year switcher */}}
+{{if .HeatmapYears}}
+	<div class="user-heatmap-years tw-flex tw-flex-col tw-gap-1 tw-w-16">
+		{{range $i, $y := .HeatmapYears}}
+			<a class="ui mini button tw-m-0{{if or (and (eq $i 0) (not $.HeatmapYear)) (eq $y $.HeatmapYear)}} primary{{else}} basic{{end}}" href="{{$.ContextUser.HomeLink}}?tab=overview{{if ne $i 0}}&year={{$y}}{{end}}{{if $.HeatmapOrg}}&org={{$.HeatmapOrg}}{{end}}">{{$y}}</a>
+		{{end}}
+	</div>
+{{end}}

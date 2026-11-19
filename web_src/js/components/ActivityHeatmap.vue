@@ -4,6 +4,10 @@ import {CalendarHeatmap} from 'vue3-calendar-heatmap';
 export default {
   components: {CalendarHeatmap},
   props: {
+    forcedEndDate: {
+      type: Date,
+      default: null,
+    },
     values: {
       type: Array,
       default: () => [],
@@ -25,6 +29,11 @@ export default {
     ],
     endDate: new Date(),
   }),
+  computed: {
+    effectiveEndDate() {
+      return this.forcedEndDate || this.endDate;
+    },
+  },
   mounted() {
     // work around issue with first legend color being rendered twice and legend cut off
     const legend = document.querySelector('.vch__external-legend-wrapper');
@@ -75,7 +84,7 @@ export default {
           .replace('{day}', v.date.getDate())
           .replace('{year}', v.date.getFullYear())
     "
-    :end-date="endDate"
+    :end-date="effectiveEndDate"
     :values="values"
     :range-color="colorRange"
     @day-click="handleDayClick($event)"
