@@ -1380,3 +1380,11 @@ table th[data-sortt-desc] .svg {
   gap: .25rem;
   min-width: 0;
 }
+
+/* fix X remove account too big */
+.switch-account-remove {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0.25em 0.75em !important;
+}

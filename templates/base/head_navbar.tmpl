@@ -161,7 +161,7 @@
 					{{svg "octicon-triangle-down" 16 "not-mobile"}}
 				</button>
 				<dialog popover id="nav-user-full-dropdown" class="inline-flip">
-					<span class="header">
+					<span class="header" tabindex="-1" autofocus>
 						<span>{{ctx.Locale.Tr "signed_in_as"}} <strong>{{.SignedUser.Name}}</strong></span>
 					</span>
 					<hr>

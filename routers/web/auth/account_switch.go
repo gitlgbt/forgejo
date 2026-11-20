@@ -7,10 +7,12 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"net/url"
 	"slices"
 	"strings"
 
 	user_model "forgejo.org/models/user"
+	"forgejo.org/modules/httplib"
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/setting"
 	"forgejo.org/modules/web/middleware"
@@ -216,8 +218,11 @@ func AccountSwitchTo(ctx *context.Context) {
 	if err != nil {
 		if user_model.IsErrUserNotExist(err) {
 			// The account no longer exists: drop it from the switcher.
-			removeSwitchAccount(ctx, ids, targetID)
-			ctx.JSONRedirect(setting.AppSubURL + "/")
+			if err := removeSwitchAccount(ctx, ids, targetID); err != nil {
+				ctx.ServerError("removeSwitchAccount", err)
+				return
+			}
+			ctx.JSONRedirect(switchRedirectTarget(ctx))
 			return
 		}
 		ctx.ServerError("GetUserByID", err)
@@ -234,31 +239,59 @@ func AccountSwitchTo(ctx *context.Context) {
 		return
 	}
 
-	ctx.JSONRedirect(setting.AppSubURL + "/")
+	ctx.JSONRedirect(switchRedirectTarget(ctx))
 }
 
 // AccountSwitchRemove drops another account from the switcher. The currently
 // signed-in account cannot be removed this way; use sign out instead.
 func AccountSwitchRemove(ctx *context.Context) {
 	targetID := ctx.ParamsInt64("uid")
-	if targetID == ctx.Doer.ID {
-		ctx.JSONRedirect(setting.AppSubURL + "/")
-		return
+	if targetID != ctx.Doer.ID {
+		if err := removeSwitchAccount(ctx, getSwitchAccountIDs(ctx), targetID); err != nil {
+			ctx.ServerError("removeSwitchAccount", err)
+			return
+		}
 	}
-	removeSwitchAccount(ctx, getSwitchAccountIDs(ctx), targetID)
-	ctx.JSONRedirect(setting.AppSubURL + "/")
+
+	ctx.JSONRedirect("")
 }
 
 // removeSwitchAccount removes id from the session's switch-account list without
 // regenerating the session (the signed-in identity does not change).
-func removeSwitchAccount(ctx *context.Context, ids []int64, id int64) {
+func removeSwitchAccount(ctx *context.Context, ids []int64, id int64) error {
 	newIDs := slices.DeleteFunc(slices.Clone(ids), func(v int64) bool { return v == id })
 	if err := ctx.Session.Set(sessionKeySwitchAccounts, newIDs); err != nil {
-		ctx.ServerError("Session.Set", err)
-		return
+		return fmt.Errorf("Session.Set: %w", err)
 	}
 	if err := ctx.Session.Release(); err != nil {
-		ctx.ServerError("Session.Release", err)
-		return
+		return fmt.Errorf("Session.Release: %w", err)
 	}
+	return nil
+}
+
+func switchRedirectTarget(ctx *context.Context) string {
+	fallback := setting.AppSubURL + "/"
+	ref := ctx.Req.Referer()
+	if ref == "" {
+		return fallback
+	}
+	u, err := url.Parse(ref)
+	if err != nil || (u.Host != "" && u.Host != ctx.Req.Host) {
+		return fallback
+	}
+	target := u.EscapedPath()
+	if u.RawQuery != "" {
+		target += "?" + u.RawQuery
+	}
+	if !strings.HasPrefix(target, "/") || strings.HasPrefix(target, "//") || httplib.IsRiskyRedirectURL(target) {
+		return fallback
+	}
+
+	p := strings.TrimPrefix(u.Path, setting.AppSubURL)
+	for _, prefix := range []string{"/user/login", "/user/two_factor", "/user/webauthn", "/login/oauth"} {
+		if strings.HasPrefix(p, prefix) {
+			return fallback
+		}
+	}
+	return target
 }
