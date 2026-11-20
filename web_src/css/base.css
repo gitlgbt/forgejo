@@ -1388,3 +1388,7 @@ table th[data-sortt-desc] .svg {
   min-width: 0 !important;
   padding: 0.25em 0.75em !important;
 }
+/* gab between bio and editor text */
+.gitlgbt-bio-editor {
+  margin-top: 0.5em;
+}

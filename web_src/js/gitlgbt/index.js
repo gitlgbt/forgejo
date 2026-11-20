@@ -4,10 +4,12 @@
 
 import {initAnnouncement} from './announcement.js';
 import {initAnnouncementEditors} from './announcement-editor.js';
+import {initBioEditors} from './bio-editor.js';
 
 function init() {
   initAnnouncement();
   initAnnouncementEditors();
+  initBioEditors();
 }
 
 if (document.readyState === 'loading') {

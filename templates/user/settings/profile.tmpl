@@ -41,7 +41,17 @@
 
 					<label {{if .Err_Biography}}class="field error"{{end}}>
 						{{ctx.Locale.Tr "user.user_bio"}}
-						<textarea name="biography" rows="2" placeholder="{{ctx.Locale.Tr "settings.biography_placeholder"}}" maxlength="255">{{.SignedUser.Description}}</textarea>
+						<div class="comment">
+						{{template "shared/combomarkdowneditor" (dict
+							"ContainerClasses" "gitlgbt-bio-editor"
+							"MarkdownPreviewUrl" (print .Link "/markup")
+							"MarkdownPreviewContext" .Link
+							"TextareaName" "biography"
+							"TextareaContent" .SignedUser.Description
+							"TextareaPlaceholder" (ctx.Locale.Tr "settings.biography_placeholder")
+							"DropzoneParentContainer" ""
+						)}}
+						</div>
 						<span class="help">{{ctx.Locale.Tr "settings.profile.dotprofile.hint" ".profile" (AppDocsURL "user/collaboration/profile/")}}</span>
 					</label>
 
