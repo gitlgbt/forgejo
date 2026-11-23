@@ -116,9 +116,10 @@
 			</li>
 			{{end}}
 			{{if .Badges}}
-			<li>
-
-				<div class="user-badges">
+    <li>
+	<div class="tw-w-full">  <!-- this 2 line remove it if text look bad later -->
+		<div class="user-orgs-heading tw-font-semibold tw-mb-2">{{ctx.Locale.Tr "user.achievement"}}</div>
+		<div class="user-badges">
 				{{range .Badges}}
 					<span class="user-badge-item">
 						{{if .ImageURL}}
