@@ -6,6 +6,7 @@ package user
 
 import (
 	"net/url"
+	"strings"
 
 	"forgejo.org/models/db"
 	"forgejo.org/models/organization"
@@ -26,6 +27,12 @@ import (
 	"forgejo.org/routers/web/repo"
 	"forgejo.org/services/context"
 	funding_service "forgejo.org/services/funding"
+)
+
+// i change my mind alot so change here if need to
+var (
+	userProfileRepoNames = []string{"user", ".user", "me", ".me"}
+	orgProfileRepoNames  = []string{"org", ".org", "organization", ".organization"}
 )
 
 // prepareContextForCommonProfile store some common data into context data for user's profile related pages (including the nav menu)
@@ -96,52 +103,82 @@ func PrepareContextForProfileBigAvatar(ctx *context.Context) {
 	}
 }
 
-func FindUserProfileReadme(ctx *context.Context, doer *user_model.User) (profileDbRepo *repo_model.Repository, profileGitRepo *git.Repository, profileReadmeBlob *git.Blob, profileFunding *funding_service.RepoFunding, profileClose func()) {
-	profileDbRepo, err := repo_model.GetRepositoryByName(ctx, ctx.ContextUser.ID, context.OwnerProfileRepositoryName)
-	if err == nil {
-		// Don't show profile content if .profile repository is a fork or private
-		if profileDbRepo.IsFork || profileDbRepo.IsPrivate {
-			return nil, nil, nil, nil, func() {}
+func FindUserProfileReadme(ctx *context.Context, doer *user_model.User) (*repo_model.Repository, *git.Repository, *git.Blob, *funding_service.RepoFunding, func()) {
+	names := []string{ctx.ContextUser.Name}
+	if ctx.ContextUser.IsOrganization() {
+		names = append(names, orgProfileRepoNames...)
+	} else {
+		names = append(names, userProfileRepoNames...)
+	}
+	names = append(names, context.OwnerProfileRepositoryName)
+
+	for _, name := range names {
+		dbRepo, gitRepo, blob, funding := findProfileReadmeInRepo(ctx, doer, name)
+		if blob != nil {
+			return dbRepo, gitRepo, blob, funding, func() { _ = gitRepo.Close() }
 		}
-		perm, err := access_model.GetUserRepoPermission(ctx, profileDbRepo, doer)
-		if err == nil && !profileDbRepo.IsEmpty && perm.CanRead(unit.TypeCode) {
-			if profileGitRepo, err = gitrepo.OpenRepository(ctx, profileDbRepo); err != nil {
-				log.Error("FindUserProfileReadme failed to OpenRepository: %v", err)
-			} else {
-				if commit, err := profileGitRepo.GetBranchCommit(profileDbRepo.DefaultBranch); err != nil {
-					log.Error("FindUserProfileReadme failed to GetBranchCommit: %v", err)
-				} else {
-					profileFunding, err = funding_service.GetFundingFromCommit(profileDbRepo, commit)
+	}
+	return nil, nil, nil, nil, func() {}
+}
+
+func findProfileReadmeInRepo(ctx *context.Context, doer *user_model.User, repoName string) (*repo_model.Repository, *git.Repository, *git.Blob, *funding_service.RepoFunding) {
+	dbRepo, err := repo_model.GetRepositoryByName(ctx, ctx.ContextUser.ID, repoName)
+	if err != nil {
+		if !repo_model.IsErrRepoNotExist(err) {
+			log.Error("FindUserProfileReadme failed to GetRepositoryByName: %v", err)
+		}
+		return nil, nil, nil, nil
+	}
+	// no private repo etc you goy it
+	if dbRepo.IsFork || dbRepo.IsPrivate || dbRepo.IsEmpty {
+		return nil, nil, nil, nil
+	}
+	if perm, err := access_model.GetUserRepoPermission(ctx, dbRepo, doer); err != nil || !perm.CanRead(unit.TypeCode) {
+		return nil, nil, nil, nil
+	}
+	gitRepo, err := gitrepo.OpenRepository(ctx, dbRepo)
+	if err != nil {
+		log.Error("FindUserProfileReadme failed to OpenRepository: %v", err)
+		return nil, nil, nil, nil
+	}
+	commit, err := gitRepo.GetBranchCommit(dbRepo.DefaultBranch)
+	if err != nil {
+		log.Error("FindUserProfileReadme failed to GetBranchCommit: %v", err)
+		_ = gitRepo.Close()
+		return nil, nil, nil, nil
+	}
+
+	root, err := commit.SubTree("")
+	if err == nil {
+		var rootEntries []*git.TreeEntry
+		if rootEntries, err = root.ListEntries(); err == nil {
+			lists := [][]*git.TreeEntry{rootEntries}
+			for _, e := range rootEntries {
+				if e.IsDir() && strings.EqualFold(e.Name(), context.OwnerProfileRepositoryName) {
+					if sub, err := commit.SubTree(e.Name()); err == nil {
+						if subEntries, err := sub.ListEntries(); err == nil {
+							lists = [][]*git.TreeEntry{subEntries, rootEntries}
+						}
+					}
+					break
+				}
+			}
+			for _, entries := range lists {
+				if _, readme, err := repo.FindReadmeFileInEntries(ctx, entries, true); err == nil && readme != nil {
+					funding, err := funding_service.GetFundingFromCommit(dbRepo, commit)
 					if err != nil && !funding_service.IsNotExistError(err) {
 						log.Error("FindUserProfileReadme failed to GetFundingFromCommit: %v", err)
 					}
-					tree, err := commit.SubTree("")
-					if err != nil {
-						log.Error("FindUserProfileReadme failed to get SubTree: %v", err)
-					} else {
-						entries, err := tree.ListEntries()
-						if err != nil {
-							log.Error("FindUserProfileReadme failed to list entries: %v", err)
-						} else {
-							_, readmeEntry, err := repo.FindReadmeFileInEntries(ctx, entries, true)
-							if err != nil {
-								log.Error("FindUserProfileReadme failed to find readme in entries: %v", err)
-							} else if readmeEntry != nil {
-								profileReadmeBlob = readmeEntry.Blob()
-							}
-						}
-					}
+					return dbRepo, gitRepo, readme.Blob(), funding
 				}
 			}
 		}
-	} else if !repo_model.IsErrRepoNotExist(err) {
-		log.Error("FindUserProfileReadme failed to GetRepositoryByName: %v", err)
 	}
-	return profileDbRepo, profileGitRepo, profileReadmeBlob, profileFunding, func() {
-		if profileGitRepo != nil {
-			_ = profileGitRepo.Close()
-		}
+	if err != nil {
+		log.Error("FindUserProfileReadme failed to read tree: %v", err)
 	}
+	_ = gitRepo.Close()
+	return nil, nil, nil, nil
 }
 
 func RenderUserHeader(ctx *context.Context) {
