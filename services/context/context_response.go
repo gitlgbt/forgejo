@@ -85,7 +85,7 @@ func (ctx *Context) HTML(status int, name base.TplName) {
 		return strconv.FormatInt(time.Since(tmplStartTime).Nanoseconds()/1e6, 10) + "ms"
 	}
 
-	err := ctx.Render.HTML(ctx.Resp, status, string(name), ctx.Data, ctx.TemplateContext)
+	err := ctx.frontendRenderer().HTML(ctx.Resp, status, string(name), ctx.Data, ctx.TemplateContext)
 	if err == nil || errors.Is(err, syscall.EPIPE) {
 		return
 	}
@@ -103,7 +103,7 @@ func (ctx *Context) HTML(status int, name base.TplName) {
 // JSONTemplate renders the template as JSON response
 // keep in mind that the template is processed in HTML context, so JSON-things should be handled carefully, eg: by JSEscape
 func (ctx *Context) JSONTemplate(tmpl base.TplName) {
-	t, err := ctx.Render.TemplateLookup(string(tmpl), nil)
+	t, err := ctx.frontendRenderer().TemplateLookup(string(tmpl), nil)
 	if err != nil {
 		ctx.ServerError("unable to find template", err)
 		return
@@ -117,7 +117,7 @@ func (ctx *Context) JSONTemplate(tmpl base.TplName) {
 // RenderToHTML renders the template content to a HTML string
 func (ctx *Context) RenderToHTML(name base.TplName, data map[string]any) (template.HTML, error) {
 	var buf strings.Builder
-	err := ctx.Render.HTML(&buf, 0, string(name), data, ctx.TemplateContext)
+	err := ctx.frontendRenderer().HTML(&buf, 0, string(name), data, ctx.TemplateContext)
 	return template.HTML(buf.String()), err
 }
 

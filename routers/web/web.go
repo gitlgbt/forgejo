@@ -379,6 +379,7 @@ func Routes() *web.Route {
 	routes.Use(chi_middleware.GetHead)
 
 	routes.Head("/", misc.DummyOK) // for health check - doesn't need to be passed through gzip handler
+	routes.Methods("GET, HEAD, OPTIONS", "/assets/_fe/*", optionsCorsHandler(), public.FrontendFileHandlerFunc())
 	routes.Methods("GET, HEAD, OPTIONS", "/assets/*", optionsCorsHandler(), public.FileHandlerFunc())
 	routes.Methods("GET, HEAD", "/avatars/*", resizingHandler("avatars", storage.Avatars, avatar.AllowedResizedAvatarSizes))
 	routes.Methods("GET, HEAD", "/repo-avatars/*", resizingHandler("repo-avatars", storage.RepoAvatars, avatar.AllowedResizedAvatarSizes))
@@ -773,6 +774,7 @@ func registerRoutes(m *web.Route) {
 			m.Post("/hints", web.Bind(forms.UpdateHintsForm{}), user_setting.UpdateUserHints)
 			m.Post("/hidden_comments", user_setting.UpdateUserHiddenComments)
 			m.Post("/theme", web.Bind(forms.UpdateThemeForm{}), user_setting.UpdateUIThemePost)
+			m.Post("/frontend", user_setting.UpdateFrontendPost)
 		})
 		m.Group("/security", func() {
 			m.Get("", security.Security)

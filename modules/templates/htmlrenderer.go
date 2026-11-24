@@ -30,6 +30,7 @@ import (
 type TemplateExecutor scopedtmpl.TemplateExecutor
 
 type HTMLRender struct {
+	name      string
 	templates atomic.Pointer[scopedtmpl.ScopedTemplate]
 }
 
@@ -61,11 +62,14 @@ func (h *HTMLRender) TemplateLookup(name string, ctx context.Context) (TemplateE
 	}
 	m := NewFuncMap()
 	m["ctx"] = func() any { return ctx }
+	if h.name != "" && h.name != DefaultFrontend {
+		m["AssetUrlPrefix"] = func() string { return setting.StaticURLPrefix + "/assets/_fe/" + h.name }
+	}
 	return tmpls.Executor(name, m)
 }
 
 func (h *HTMLRender) CompileTemplates() error {
-	assets := AssetFS()
+	assets := h.assetFS()
 	extSuffix := ".tmpl"
 	tmpls := scopedtmpl.NewScopedTemplate()
 	tmpls.Funcs(NewFuncMap())
@@ -114,7 +118,7 @@ func initHTMLRenderer() {
 	}
 	log.Debug("Creating %s HTML Renderer", rendererType)
 
-	htmlRender = &HTMLRender{}
+	htmlRender = &HTMLRender{name: DefaultFrontend}
 	if err := htmlRender.CompileTemplates(); err != nil {
 		p := &templateErrorPrettier{assets: AssetFS()}
 		wrapTmplErrMsg(p.handleFuncNotDefinedError(err))
@@ -124,10 +128,16 @@ func initHTMLRenderer() {
 		wrapTmplErrMsg(fmt.Sprintf("CompileTemplates error: %v", err))
 	}
 
+	loadFrontends()
+
 	if !setting.IsProd {
-		go AssetFS().WatchLocalChanges(graceful.GetManager().ShutdownContext(), func() {
-			_ = ReloadHTMLTemplates()
-		})
+		for _, r := range frontends {
+			go r.assetFS().WatchLocalChanges(graceful.GetManager().ShutdownContext(), func() {
+				if err := r.CompileTemplates(); err != nil {
+					log.Error("Template error: %v", err)
+				}
+			})
+		}
 	}
 }
 

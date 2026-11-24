@@ -22,6 +22,7 @@ import (
 	"forgejo.org/modules/log"
 	"forgejo.org/modules/optional"
 	"forgejo.org/modules/setting"
+	"forgejo.org/modules/templates"
 	"forgejo.org/modules/translation"
 	"forgejo.org/modules/util"
 	"forgejo.org/modules/web"
@@ -321,6 +322,10 @@ func Appearance(ctx *context.Context) {
 	ctx.Data["Title"] = ctx.Tr("settings.appearance")
 	ctx.Data["PageIsSettingsAppearance"] = true
 	ctx.Data["AllThemes"] = setting.UI.Themes
+	ctx.Data["AllFrontends"] = templates.Frontends()
+	ctx.Data["DefaultFrontend"] = templates.DefaultFrontend
+	frontend, _ := user_model.GetUserSetting(ctx, ctx.Doer.ID, templates.FrontendSettingKey)
+	ctx.Data["CurrentFrontend"] = templates.ResolveFrontend(frontend)
 	ctx.Data["ThemeName"] = func(themeName string) string {
 		fullThemeName := "themes.names." + themeName
 		if ctx.Locale.HasKey(fullThemeName) {
@@ -342,6 +347,21 @@ func Appearance(ctx *context.Context) {
 	}
 
 	ctx.HTML(http.StatusOK, tplSettingsAppearance)
+}
+
+func UpdateFrontendPost(ctx *context.Context) {
+	name := ctx.FormString("frontend")
+	if !util.SliceContainsString(templates.Frontends(), name) {
+		ctx.Flash.Error(ctx.Tr("settings.frontend_update_error"))
+		ctx.Redirect(setting.AppSubURL + "/user/settings/appearance")
+		return
+	}
+	if err := user_model.SetUserSetting(ctx, ctx.Doer.ID, templates.FrontendSettingKey, name); err != nil {
+		ctx.ServerError("SetUserSetting", err)
+		return
+	}
+	ctx.Flash.Success(ctx.Tr("settings.frontend_update_success"))
+	ctx.Redirect(setting.AppSubURL + "/user/settings/appearance")
 }
 
 // UpdateUIThemePost is used to update users' specific theme

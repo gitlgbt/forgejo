@@ -40,6 +40,29 @@
 			</div>
 		</div>
 
+		<h4 class="ui top attached header">
+			{{ctx.Locale.Tr "settings.frontend"}}
+		</h4>
+		<div class="ui attached segment">
+			<form class="ui form" action="{{.Link}}/frontend" method="post">
+				<div class="field">
+					<div class="ui selection dropdown" id="frontend">
+						<input name="frontend" type="hidden" value="{{.CurrentFrontend}}">
+						{{svg "octicon-triangle-down" 14 "dropdown icon"}}
+						<div class="text">{{if eq .CurrentFrontend .DefaultFrontend}}{{ctx.Locale.Tr "settings.frontend_default" .CurrentFrontend}}{{else}}{{.CurrentFrontend}}{{end}}</div>
+						<div class="menu">
+						{{range .AllFrontends}}
+							<div class="item{{if eq $.CurrentFrontend .}} active selected{{end}}" data-value="{{.}}">{{if eq . $.DefaultFrontend}}{{ctx.Locale.Tr "settings.frontend_default" .}}{{else}}{{.}}{{end}}</div>
+						{{end}}
+						</div>
+					</div>
+				</div>
+				<div class="field">
+					<button class="ui primary button">{{ctx.Locale.Tr "settings.update_frontend"}}</button>
+				</div>
+			</form>
+		</div>
+
 		<!-- Language -->
 		<h4 class="ui top attached header">
 			{{ctx.Locale.Tr "settings.language.title"}}
