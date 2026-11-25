@@ -324,7 +324,7 @@ func Appearance(ctx *context.Context) {
 	ctx.Data["AllThemes"] = setting.UI.Themes
 	ctx.Data["AllFrontends"] = templates.Frontends()
 	ctx.Data["DefaultFrontend"] = templates.DefaultFrontend
-	frontend, _ := user_model.GetUserSetting(ctx, ctx.Doer.ID, templates.FrontendSettingKey)
+	frontend, _ := user_model.GetSetting(ctx, ctx.Doer.ID, templates.FrontendSettingKey)
 	ctx.Data["CurrentFrontend"] = templates.ResolveFrontend(frontend)
 	ctx.Data["ThemeName"] = func(themeName string) string {
 		fullThemeName := "themes.names." + themeName

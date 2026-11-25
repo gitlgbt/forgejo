@@ -16,6 +16,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestValidFrontendName(t *testing.T) {
+	assert.True(t, ValidFrontendName("gitlgbt"))
+	assert.True(t, ValidFrontendName("classic-ui"))
+	assert.True(t, ValidFrontendName("theme_1"))
+
+	assert.False(t, ValidFrontendName(""))
+	assert.False(t, ValidFrontendName(".hidden"))
+	assert.False(t, ValidFrontendName("foo/bar"))
+	assert.False(t, ValidFrontendName(`foo\bar`))
+	assert.False(t, ValidFrontendName("foo?bar"))
+	assert.False(t, ValidFrontendName("foo#bar"))
+	assert.False(t, ValidFrontendName("theme 1"))
+}
+
 func TestExtractErrorLine(t *testing.T) {
 	cases := []struct {
 		code   string

@@ -13,7 +13,7 @@ func (ctx *Context) frontendRenderer() *templates.HTMLRender {
 	name, ok := ctx.Data["Frontend"].(string)
 	if !ok {
 		if ctx.Doer != nil {
-			name, _ = user_model.GetUserSetting(ctx, ctx.Doer.ID, templates.FrontendSettingKey)
+			name, _ = user_model.GetSetting(ctx, ctx.Doer.ID, templates.FrontendSettingKey)
 		}
 		name = templates.ResolveFrontend(name)
 		ctx.Data["Frontend"] = name

@@ -45,6 +45,7 @@
 		</h4>
 		<div class="ui attached segment">
 			<form class="ui form" action="{{.Link}}/frontend" method="post">
+				{{.CsrfTokenHtml}}
 				<div class="field">
 					<div class="ui selection dropdown" id="frontend">
 						<input name="frontend" type="hidden" value="{{.CurrentFrontend}}">

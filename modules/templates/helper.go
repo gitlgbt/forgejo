@@ -33,6 +33,11 @@ func NewFuncMap() template.FuncMap {
 
 		"ExecuteTemplate": func(ctx context.Context, tmplName string, args any) template.HTML {
 			h := HTMLRenderer()
+			if tmplCtx, ok := ctx.(*Context); ok && tmplCtx.Data != nil {
+				if name, ok := tmplCtx.Data["Frontend"].(string); ok {
+					h = FrontendRenderer(name)
+				}
+			}
 			tmpl, err := h.TemplateLookup(tmplName, ctx)
 			if err != nil {
 				panic("Template not found: " + tmplName)

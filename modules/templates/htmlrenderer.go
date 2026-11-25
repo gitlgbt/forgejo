@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -63,7 +64,7 @@ func (h *HTMLRender) TemplateLookup(name string, ctx context.Context) (TemplateE
 	m := NewFuncMap()
 	m["ctx"] = func() any { return ctx }
 	if h.name != "" && h.name != DefaultFrontend {
-		m["AssetUrlPrefix"] = func() string { return setting.StaticURLPrefix + "/assets/_fe/" + h.name }
+		m["AssetUrlPrefix"] = func() string { return setting.StaticURLPrefix + "/assets/_fe/" + url.PathEscape(h.name) }
 	}
 	return tmpls.Executor(name, m)
 }
@@ -108,6 +109,7 @@ func ReloadHTMLTemplates() error {
 		log.Error("Template error: %v\n%s", err, log.Stack(2))
 		return err
 	}
+	loadFrontends()
 	return nil
 }
 
