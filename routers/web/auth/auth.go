@@ -71,7 +71,7 @@ func autoSignIn(ctx *context.Context) (bool, error) {
 	if u != nil {
 		isSucceed = true
 
-		if err := updateSession(ctx, nil, map[string]any{"uid": u.ID}); err != nil {
+		if err := updateSession(ctx, nil, map[string]any{"uid": u.ID, "sessionGeneration": u.SessionGeneration}); err != nil {
 			return false, fmt.Errorf("unable to updateSession: %w", err)
 		}
 
@@ -399,6 +399,7 @@ func handleSignInFull(ctx *context.Context, u *user_model.User, remember, obeyRe
 		sessionKeySwitchAdd,
 	}, map[string]any{
 		"uid":                    u.ID,
+		"sessionGeneration":      u.SessionGeneration,
 		sessionKeySwitchAccounts: switchAccounts,
 	}); err != nil {
 		ctx.ServerError("RegenerateSession", err)
@@ -924,7 +925,8 @@ func handleAccountActivation(ctx *context.Context, user *user_model.User) {
 	log.Trace("User activated: %s", user.Name)
 
 	if err := updateSession(ctx, nil, map[string]any{
-		"uid": user.ID,
+		"uid":               user.ID,
+		"sessionGeneration": user.SessionGeneration,
 	}); err != nil {
 		log.Error("Unable to regenerate session for user: %-v with email: %s: %v", user, user.Email, err)
 		ctx.ServerError("ActivateUserEmail", err)

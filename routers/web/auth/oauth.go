@@ -1417,6 +1417,7 @@ func handleOAuth2SignIn(ctx *context.Context, source *auth.Source, u *user_model
 			sessionKeySwitchAdd,
 		}, map[string]any{
 			"uid":                    u.ID,
+			"sessionGeneration":      u.SessionGeneration,
 			sessionKeySwitchAccounts: switchAccounts,
 		}); err != nil {
 			ctx.ServerError("updateSession", err)
