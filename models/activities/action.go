@@ -542,7 +542,6 @@ type GetFeedsOptions struct {
 	OnlyPerformedBy      bool                   // only actions performed by requested user
 	OnlyPerformedByActor bool                   // only actions performed by the original actor
 	Date                 string                 // the day we want activity for: YYYY-MM-DD
-	RepoOwnerID          int64                  // action in repo
 	NoCount              bool                   // indicate no count should be returned.
 
 	// Filters repositories based upon optional authorization restrictions.
@@ -662,10 +661,6 @@ func activityQueryCondition(ctx context.Context, opts GetFeedsOptions) (builder.
 
 	if opts.RequestedRepo != nil {
 		cond = cond.And(builder.Eq{"repo_id": opts.RequestedRepo.ID})
-	}
-
-	if opts.RepoOwnerID != 0 {
-		cond = cond.And(builder.In("repo_id", builder.Select("id").From("repository").Where(builder.Eq{"owner_id": opts.RepoOwnerID})))
 	}
 
 	if opts.RequestedTeam != nil {

@@ -12,13 +12,10 @@ import (
 	"io"
 	"net/http"
 	"path"
-	"sort"
 	"strings"
-	"time"
 
 	activities_model "forgejo.org/models/activities"
 	"forgejo.org/models/db"
-	"forgejo.org/models/organization"
 	repo_model "forgejo.org/models/repo"
 	user_model "forgejo.org/models/user"
 	"forgejo.org/modules/base"
@@ -84,16 +81,6 @@ func userProfile(ctx *context.Context) {
 	prepareUserProfileFunding(ctx, profileFunding)
 	// call PrepareContextForProfileBigAvatar later to avoid re-querying the NumFollowers & NumFollowing
 	shared_user.PrepareContextForProfileBigAvatar(ctx)
-	// heatmap mostr contribution org first
-	if counts, ok := ctx.Data["HeatmapOrgCounts"].(map[int64]int64); ok {
-		if orgs, ok := ctx.Data["Orgs"].([]*organization.Organization); ok {
-			ranked := append([]*organization.Organization(nil), orgs...)
-			sort.SliceStable(ranked, func(i, j int) bool { return counts[ranked[i].ID] > counts[ranked[j].ID] })
-			ctx.Data["HeatmapOrgs"] = ranked
-		} else {
-			ctx.Data["HeatmapOrgs"] = ctx.Data["Orgs"]
-		}
-	}
 	ctx.HTML(http.StatusOK, tplProfile)
 }
 
@@ -112,16 +99,8 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 	// if there is a profile readme, default to "overview" page, otherwise, default to "repositories" page
 	// if there is not a profile readme, the overview tab should be treated as the repositories tab
 	tab := ctx.FormString("tab")
-	// show overview tab when there are heatmap dot
-	hasOverview := profileReadme != nil
-	if !hasOverview && setting.Service.EnableUserHeatmap && (showPrivate || !ctx.ContextUser.KeepActivityPrivate) {
-		if heatmap, heatmapErr := activities_model.GetUserHeatmapDataByUser(ctx, ctx.ContextUser, ctx.Doer, nil); heatmapErr == nil && len(heatmap) > 0 {
-			hasOverview = true
-		}
-	}
-	ctx.Data["HasOverview"] = hasOverview
 	if tab == "" || tab == "overview" {
-		if hasOverview {
+		if profileReadme != nil {
 			tab = "overview"
 		} else {
 			tab = "repositories"
@@ -192,7 +171,7 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 	ctx.Data["IsPrivate"] = private
 
 	// heatmap
-	if tab == "overview" && setting.Service.EnableUserHeatmap && (showPrivate || !ctx.ContextUser.KeepActivityPrivate) {
+	if (tab == "overview" || tab == "repositories") && setting.Service.EnableUserHeatmap && (showPrivate || !ctx.ContextUser.KeepActivityPrivate) {
 		data, err := activities_model.GetUserHeatmapDataByUser(ctx, ctx.ContextUser, ctx.Doer, nil)
 		if err != nil {
 			ctx.ServerError("GetUserHeatmapDataByUser", err)
@@ -200,58 +179,6 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 		}
 		ctx.Data["HeatmapData"] = data
 		ctx.Data["HeatmapTotalContributions"] = activities_model.GetTotalContributionsInHeatmap(data)
-	}
-
-	// year chnger
-	if (ctx.FormString("tab") == "" || ctx.FormString("tab") == "overview") && setting.Service.EnableUserHeatmap && (showPrivate || !ctx.ContextUser.KeepActivityPrivate) {
-		now := time.Now()
-		firstYear := ctx.ContextUser.CreatedUnix.AsTime().Year()
-		year := ctx.FormInt("year")
-		if year < firstYear || year >= now.Year() {
-			year = 0
-		}
-
-		var orgID int64
-		orgName := ""
-		if name := ctx.FormTrim("org"); name != "" {
-			if org, orgErr := user_model.GetUserByName(ctx, name); orgErr == nil && org.IsOrganization() && user_model.IsUserVisibleToViewer(ctx, org, ctx.Doer) {
-				orgID = org.ID
-				orgName = org.Name
-			}
-		}
-
-		var data []*activities_model.UserHeatmapData
-		var err error
-		if year == 0 && orgID == 0 {
-			data, err = activities_model.GetUserHeatmapDataByUser(ctx, ctx.ContextUser, ctx.Doer, nil)
-		} else {
-			data, err = activities_model.GetUserHeatmapDataByUserFiltered(ctx, ctx.ContextUser, ctx.Doer, nil, year, orgID)
-		}
-		if err != nil {
-			ctx.ServerError("GetUserHeatmapData", err)
-			return
-		}
-
-		years := make([]int, 0, now.Year()-firstYear+1)
-		for y := now.Year(); y >= firstYear; y-- {
-			years = append(years, y)
-		}
-
-		ctx.Data["HeatmapData"] = data
-		ctx.Data["HeatmapTotalContributions"] = activities_model.GetTotalContributionsInHeatmap(data)
-		ctx.Data["HeatmapYear"] = year
-		ctx.Data["HeatmapYears"] = years
-		ctx.Data["HeatmapOrg"] = orgName
-		ctx.Data["HeatmapOrgID"] = orgID
-		counts, err := activities_model.GetUserOrgContributionCounts(ctx, ctx.ContextUser, ctx.Doer, nil, year)
-		if err != nil {
-			ctx.ServerError("GetUserOrgContributionCounts", err)
-			return
-		}
-		ctx.Data["HeatmapOrgCounts"] = counts
-		if year != 0 {
-			ctx.Data["HeatmapEndDate"] = fmt.Sprintf("%d-12-31", year)
-		}
 	}
 
 	switch tab {
@@ -384,8 +311,7 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 
 		total = int(count)
 	case "overview":
-		if profileReadme == nil {
-		} else if rc, _, err := profileReadme.NewTruncatedReader(setting.UI.MaxDisplayFileSize); err != nil {
+		if rc, _, err := profileReadme.NewTruncatedReader(setting.UI.MaxDisplayFileSize); err != nil {
 			log.Error("failed to NewTruncatedReader: %v", err)
 		} else {
 			defer rc.Close()
@@ -440,9 +366,7 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 		}
 		date := ctx.FormString("date")
 		pagingNum = setting.UI.FeedPagingNum
-		heatmapOrgID, _ := ctx.Data["HeatmapOrgID"].(int64)
 		items, count, err := activities_model.GetFeeds(ctx, activities_model.GetFeedsOptions{
-			RepoOwnerID:     heatmapOrgID,
 			RequestedUser:   ctx.ContextUser,
 			Actor:           ctx.Doer,
 			IncludePrivate:  showPrivate,
@@ -521,12 +445,6 @@ func prepareUserProfileTabData(ctx *context.Context, showPrivate bool, profileDb
 	}
 	if has, value := private.Get(); has {
 		pager.AddParamString("private", fmt.Sprint(value))
-	}
-	if orgName, _ := ctx.Data["HeatmapOrg"].(string); orgName != "" {
-		pager.AddParamString("org", orgName)
-	}
-	if y, _ := ctx.Data["HeatmapYear"].(int); y != 0 {
-		pager.AddParamString("year", fmt.Sprint(y))
 	}
 	ctx.Data["Page"] = pager
 }

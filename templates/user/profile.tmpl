@@ -65,13 +65,8 @@
 					<div class="divider"></div>
 					{{/* heatmap */}}
 {{if or .IsAdmin (eq .SignedUserID .ContextUser.ID) (not .ContextUser.KeepActivityPrivate)}}
-<div class="user-activity-layout tw-flex tw-flex-wrap tw-items-start tw-gap-4">
-	<div class="tw-flex-1 tw-min-w-0">
-		{{template "user/heatmap" .}}
-		{{template "user/dashboard/feeds" .}}
-	</div>
-	{{template "user/heatmap_years" .}}
-</div>
+{{template "user/heatmap" .}}
+{{template "user/dashboard/feeds" .}}
 {{end}}
 				{{else if and FederationEnabled (eq .TabName "feed")}}
 					{{if eq .SignedUserID .ContextUser.ID}}
@@ -82,13 +77,8 @@
 						{{end}}
 					{{end}}
 				{{else}}
-					{{if and (eq .TabName "repositories") (or .HeatmapData .HeatmapYear .HeatmapOrg)}}
-<div class="user-activity-layout tw-flex tw-flex-wrap tw-items-start tw-gap-4">
-	<div class="tw-flex-1 tw-min-w-0">
-		{{template "user/heatmap" .}}
-	</div>
-	{{template "user/heatmap_years" .}}
-</div>
+					{{if and (eq .TabName "repositories") .HeatmapData}}
+{{template "user/heatmap" .}}
 {{end}}
 {{template "shared/repo_search" .}}
 					{{template "explore/repo_list" .}}
