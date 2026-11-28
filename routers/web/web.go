@@ -317,9 +317,7 @@ func verifyAuthWithOptions(options *common.VerifyOptions) func(ctx *context.Cont
 		}
 
 		// Redirect to dashboard (or alternate location) if user tries to visit any non-login page.
-		// While adding an account to the switcher the user is still signed in but
-		// is intentionally allowed to reach the sign-in flow.
-		if options.SignOutRequired && ctx.IsSigned && ctx.Req.URL.RequestURI() != "/" && !auth.IsSwitchAccountAddMode(ctx) {
+		if options.SignOutRequired && ctx.IsSigned && ctx.Req.URL.RequestURI() != "/" {
 			ctx.RedirectToFirst(ctx.FormString("redirect_to"))
 			return
 		}
@@ -433,7 +431,8 @@ func Routes() *web.Route {
 		},
 		gzipMid, sessioner, context.Contexter(), webAuth(buildAuthGroup()),
 		// TODO: GetNotificationCount & GetActiveStopwatch really seem like things that could be folded into Contexter or as helper functions
-		user.GetNotificationCount, repo.GetActiveStopwatch, auth.LoadSwitchAccounts, goGet, smMiddleware)
+		user.GetNotificationCount, repo.GetActiveStopwatch,
+		goGet)
 	routes.Group("",
 		func() {
 			registerMixedRoutes(routes)
@@ -460,7 +459,7 @@ func Routes() *web.Route {
 	routes.NotFound(
 		gzipMid, sessioner, context.Contexter(), webAuth(buildAuthGroup()),
 		// TODO: GetNotificationCount & GetActiveStopwatch really seem like things that could be folded into Contexter or as helper functions
-		user.GetNotificationCount, repo.GetActiveStopwatch, auth.LoadSwitchAccounts,
+		user.GetNotificationCount, repo.GetActiveStopwatch,
 		goGet,
 		func(w http.ResponseWriter, req *http.Request) {
 			ctx := context.GetWebContext(req)
@@ -743,7 +742,6 @@ func registerRoutes(m *web.Route) {
 		m.Group("", func() {
 			m.Get("/authorize", web.Bind(forms.AuthorizationForm{}), auth.AuthorizeOAuth)
 			m.Post("/grant", web.Bind(forms.GrantApplicationForm{}), auth.GrantApplicationOAuth)
-			m.Post("/select_account", auth.SelectAccountOAuth)
 			// TODO manage redirection
 			m.Post("/authorize", web.Bind(forms.AuthorizationForm{}), auth.AuthorizeOAuth)
 		}, reqSignIn)
@@ -900,11 +898,6 @@ func registerRoutes(m *web.Route) {
 		m.Get("/forgot_password", auth.ForgotPasswd)
 		m.Post("/forgot_password", auth.ForgotPasswdPost)
 		m.Post("/logout", auth.SignOut)
-		m.Group("/account_switch", func() {
-			m.Post("/add", auth.AccountSwitchAdd)
-			m.Post("/{uid}", auth.AccountSwitchTo)
-			m.Post("/{uid}/remove", auth.AccountSwitchRemove)
-		}, reqSignIn)
 		m.Get("/task/{task}", reqSignIn, user.TaskStatus)
 		m.Post("/confirm", reqSignIn, user.SetConfirm)
 		m.Get("/stopwatches", reqSignIn, user.GetStopwatches)
